@@ -2,13 +2,14 @@
 
 ## Overview
 
-A 3-phase journey to build a minimalist WebSocket sandox. We start by establishing the core connection via QR code (Phase 1), define the real-time interaction loop with extremely low latency feedback (Phase 2), and finally harden the system against real-world 4G drops using a 30-second grace period (Phase 3).
+A 4-phase journey to build a minimalist WebSocket sandbox. We start by establishing the core connection via QR code (Phase 1), define the real-time interaction loop with extremely low latency feedback (Phase 2), harden the system against real-world 4G drops using a 30-second grace period (Phase 3), and finally deliver a full WebGL/Canvas UI redesign for both Totem and Phone (Phase 4).
 
 ## Phases
 
 - [x] **Phase 1: Base Connection (2026-03-19)** - Establish a reliable Socket.io connection between Totem and Phone via QR code.
 - [ ] **Phase 2: Real-time Interaction** - Implement the core latency measurement loop and visual/audio feedback.
 - [ ] **Phase 3: Connection Resilience** - Handle unstable 4G drops with a 30-second Grace Period and session expiration.
+- [ ] **Phase 4: UI Redesign** - Full visual overhaul of Totem (WebGL wave + Canvas 2D dormant animation) and Phone (glassmorphism) as self-contained HTML files.
 
 ## Phase Details
 
@@ -55,13 +56,25 @@ Plans:
 - [ ] 03-01: Connection loss detection, Grace Period UI, and auto-resume logic
 - [ ] 03-02: 30-second timeout enforcement and session unlinking logic
 
+### Phase 4: UI Redesign
+**Goal**: Full visual overhaul of Totem (WebGL wave + Canvas 2D dormant animation) and Phone (glassmorphism dark UI) as self-contained HTML files. Delete totem.js and phone.js — all logic inlined.
+**Depends on**: Phase 1
+**Requirements**: [UI-01, UI-02, UI-03, UI-04]
+**Success Criteria** (what must be TRUE):
+  1. totem.html is self-contained — no totem.js dependency; WebGL wave triggers on server:ping.
+  2. phone.html is self-contained — no phone.js dependency; glassmorphism button emits phone:ping.
+  3. totem.js and phone.js are deleted.
+  4. All existing socket events (server:init, totem:phone-connected, server:latency, etc.) continue working end-to-end.
+**Plans**: 0 plans
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Base Connection | 2/2 | Complete | 2026-03-19 |
 | 2. Real-time Interaction | 1/2 | In Progress|  |
 | 3. Connection Resilience | 0/2 | Not started | - |
+| 4. UI Redesign | 0/0 | Not started | - |
