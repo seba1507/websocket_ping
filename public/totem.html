@@ -6,68 +6,466 @@
   <title>Ping-Pong Totem</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #020202; font-family: 'Courier New', monospace; }
 
-    body {
-      background: #1a1a1a;
-      color: #f0f0f0;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      gap: 24px;
+    #webgl-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+    #dormant-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; display: none; }
+
+    #qr-screen {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+      background: transparent;
     }
+    #qr-screen #qr-canvas { border: 2px solid rgba(255,255,255,0.05); border-radius: 8px; background: #fff; padding: 12px; }
+    #qr-screen #room-id { font-size: 2.5rem; font-weight: bold; letter-spacing: 0.4em; color: rgba(255,255,255,0.15); }
+    #qr-screen #phone-url { font-size: 0.7rem; color: rgba(255,255,255,0.06); max-width: 500px; text-align: center; word-break: break-all; }
 
-    #status {
-      font-size: 1.5rem;
-      color: #888;
-      letter-spacing: 0.05em;
-    }
-
-    #status.connected {
-      color: #39ff14;
-    }
-
-    #qr-canvas {
-      border: 4px solid #333;
-      border-radius: 12px;
-      background: #fff;
-      padding: 16px;
-    }
-
-    #room-id {
-      font-size: 3rem;
-      font-weight: bold;
-      letter-spacing: 0.4em;
-      color: #f0f0f0;
-    }
-
-    #phone-url {
-      font-size: 0.85rem;
-      color: #555;
-      max-width: 600px;
-      text-align: center;
-      word-break: break-all;
-    }
-
+    #overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; }
     #latency-display {
-      font-size: 4rem;
-      font-weight: bold;
-      color: #39ff14;
-      min-height: 80px;
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 6rem; font-weight: bold; color: rgba(255,255,255,0.9); letter-spacing: 0.05em;
     }
+    .chroma-flash { text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff; }
+
+    #corner-bl { position: absolute; bottom: 14px; left: 16px; font-size: 7px; color: #1e1e1e; letter-spacing: 0.1em; }
+    #corner-br {
+      position: absolute; bottom: 14px; right: 16px; font-size: 7px; color: rgba(255,255,255,0.3); letter-spacing: 0.1em;
+      display: flex; align-items: center; gap: 5px;
+    }
+    #corner-br .dot {
+      display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+      background: #1a1a1a;
+    }
+    #corner-br .dot.active {
+      background: #00ff87; box-shadow: 0 0 6px #00ff87;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
   </style>
 </head>
 <body>
-  <div id="status">Waiting for player...</div>
-  <canvas id="qr-canvas"></canvas>
-  <div id="room-id">------</div>
-  <div id="phone-url"></div>
-  <div id="latency-display"></div>
-
+  <canvas id="webgl-canvas"></canvas>
+  <canvas id="dormant-canvas"></canvas>
+  <div id="qr-screen">
+    <canvas id="qr-canvas"></canvas>
+    <div id="room-id"></div>
+    <div id="phone-url"></div>
+  </div>
+  <div id="overlay">
+    <div id="latency-display"></div>
+    <div id="corner-bl"></div>
+    <div id="corner-br">
+      <span class="dot"></span>
+      <span class="label">WAITING</span>
+    </div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/totem.js"></script>
+  <script>
+    // --- WebGL Setup ---
+    const webglCanvas = document.getElementById('webgl-canvas');
+    webglCanvas.width = window.innerWidth;
+    webglCanvas.height = window.innerHeight;
+    const gl = webglCanvas.getContext('webgl');
+
+    const VS_SRC = `
+      attribute vec2 a_pos;
+      void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+    `;
+
+    const FS_SRC = `
+      precision mediump float;
+      uniform vec2 u_res;
+      uniform float u_time;
+      uniform float u_wave;
+      uniform float u_strength;
+      uniform vec2 u_origin;
+
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float a = hash(i);
+        float b = hash(i + vec2(1.0, 0.0));
+        float c = hash(i + vec2(0.0, 1.0));
+        float d = hash(i + vec2(1.0, 1.0));
+        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+      }
+
+      float fBm(vec2 p) {
+        float val = 0.0;
+        float amp = 0.5;
+        for (int i = 0; i < 5; i++) {
+          val += amp * noise(p);
+          p *= 2.0;
+          amp *= 0.5;
+        }
+        return val;
+      }
+
+      vec3 bgA(vec2 fragCoord) {
+        vec3 col = vec3(0.008);
+        vec2 grid = mod(fragCoord, 16.0);
+        if (grid.x < 1.0 || grid.y < 1.0) {
+          col = vec3(0.051);
+        }
+        return col;
+      }
+
+      vec3 bgB(vec2 fragCoord, vec2 center, float radius) {
+        vec3 col = bgA(fragCoord);
+        float d = length(fragCoord - center) / radius;
+        float grad = 1.0 - smoothstep(0.0, 1.0, d);
+        col = mix(col, vec3(0.02, 0.059, 0.235), grad * 0.4);
+        return col;
+      }
+
+      void main() {
+        vec2 fragCoord = gl_FragCoord.xy;
+        vec2 uv = fragCoord / u_res;
+        uv.x *= u_res.x / u_res.y;
+
+        vec2 origin = u_origin;
+        origin.x *= u_res.x / u_res.y;
+
+        float dist = length(uv - origin);
+
+        if (u_wave <= 0.0) {
+          gl_FragColor = vec4(bgA(fragCoord), 1.0);
+          return;
+        }
+
+        float organic = fBm(uv * 3.0);
+        float noisyDist = dist + (organic - 0.5) * 0.15 * u_strength;
+
+        float bandWidth = 0.12;
+        float inBand = smoothstep(u_wave - bandWidth, u_wave, noisyDist)
+                     * (1.0 - smoothstep(u_wave, u_wave + 0.02, noisyDist));
+
+        vec2 dir = normalize(uv - origin);
+        vec2 perp = vec2(-dir.y, dir.x);
+
+        float localNoise = noise(uv * 10.0 + u_time);
+
+        vec2 dispUV = uv + dir * inBand * u_strength * 0.03 + perp * localNoise * 0.01;
+
+        float r = fBm(dispUV * 1.00);
+        float g = fBm(dispUV * 0.82);
+        float b = fBm(dispUV * 0.65);
+        vec3 chromatic = vec3(r, g, b);
+
+        float perpDot = dot(uv - origin, perp);
+        vec3 magenta = vec3(1.0, 0.0, 0.8);
+        vec3 cyan = vec3(0.0, 1.0, 0.933);
+        float flareStrength = inBand * u_strength * 0.5;
+        chromatic += magenta * max(perpDot, 0.0) * flareStrength;
+        chromatic += cyan * max(-perpDot, 0.0) * flareStrength;
+
+        float rim = smoothstep(u_wave - 0.04, u_wave - 0.01, noisyDist);
+        chromatic += vec3(0.8) * rim * u_strength * inBand;
+
+        float viewportDiag = length(u_res);
+        vec3 bgInside = bgB(fragCoord, u_res * u_origin, u_wave * viewportDiag);
+        vec3 bgOutside = bgA(fragCoord);
+        float inside = 1.0 - smoothstep(u_wave - 0.01, u_wave + 0.01, noisyDist);
+
+        vec3 bg = mix(bgOutside, bgInside, inside);
+        vec3 finalColor = bg + chromatic * inBand * u_strength;
+
+        gl_FragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
+      }
+    `;
+
+    function compileShader(gl, type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error('Shader error:', gl.getShaderInfoLog(s));
+        gl.deleteShader(s);
+        return null;
+      }
+      return s;
+    }
+
+    const vs = compileShader(gl, gl.VERTEX_SHADER, VS_SRC);
+    const fs = compileShader(gl, gl.FRAGMENT_SHADER, FS_SRC);
+    const program = gl.createProgram();
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    const quadBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+    const aPosLoc = gl.getAttribLocation(program, 'a_pos');
+    gl.enableVertexAttribArray(aPosLoc);
+    gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 0, 0);
+
+    const loc = {
+      u_res:      gl.getUniformLocation(program, 'u_res'),
+      u_time:     gl.getUniformLocation(program, 'u_time'),
+      u_wave:     gl.getUniformLocation(program, 'u_wave'),
+      u_strength: gl.getUniformLocation(program, 'u_strength'),
+      u_origin:   gl.getUniformLocation(program, 'u_origin'),
+    };
+
+    gl.uniform2f(loc.u_res, webglCanvas.width, webglCanvas.height);
+    gl.uniform2f(loc.u_origin, 0.5, 0.5);
+    gl.uniform1f(loc.u_wave, 0.0);
+    gl.uniform1f(loc.u_strength, 0.0);
+
+    window.addEventListener('resize', () => {
+      webglCanvas.width = window.innerWidth;
+      webglCanvas.height = window.innerHeight;
+      gl.viewport(0, 0, webglCanvas.width, webglCanvas.height);
+      gl.uniform2f(loc.u_res, webglCanvas.width, webglCanvas.height);
+    });
+
+    // --- WebGL Render Loop ---
+    let waveActive = false;
+    let waveStartTime = 0;
+    let currentWave = 0.0;
+    let currentStrength = 0.0;
+
+    const dormantCanvas = document.getElementById('dormant-canvas');
+
+    function renderWebGL(now) {
+      const t = now * 0.001;
+      gl.uniform1f(loc.u_time, t);
+
+      if (waveActive) {
+        currentWave = Math.min(((now - waveStartTime) / 2000.0) * 1.6, 1.6);
+        currentStrength = Math.exp(-Math.pow((currentWave - 0.35) / 0.2, 2.0));
+        if (currentWave >= 1.6) {
+          waveActive = false;
+          currentWave = 0.0;
+          currentStrength = 0.0;
+          // Exit State 3 -> back to State 2
+          dormantCanvas.style.display = 'block';
+        }
+      }
+
+      gl.uniform1f(loc.u_wave, currentWave);
+      gl.uniform1f(loc.u_strength, currentStrength);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      requestAnimationFrame(renderWebGL);
+    }
+    requestAnimationFrame(renderWebGL);
+
+    // --- triggerWave ---
+    function triggerWave(ox, oy) {
+      gl.uniform2f(loc.u_origin, ox, oy);
+      waveStartTime = performance.now();
+      waveActive = true;
+      // Enter State 3: hide dormant canvas
+      dormantCanvas.style.display = 'none';
+      // Audio
+      playBeep();
+    }
+
+    // --- fBm for Canvas 2D (JS) ---
+    function hashF(x, y) { return ((Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1 + 1) % 1; }
+    function noiseF(x, y) {
+      const ix = Math.floor(x), iy = Math.floor(y);
+      const fx = x - ix, fy = y - iy;
+      const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+      const a = hashF(ix, iy), b = hashF(ix+1, iy), c = hashF(ix, iy+1), d = hashF(ix+1, iy+1);
+      return a + (b-a)*sx + (c-a)*sy + (a-b-c+d)*sx*sy;
+    }
+    function fBmF(x, y, octaves) {
+      let val = 0, amp = 0.5;
+      for (let i = 0; i < octaves; i++) { val += amp * noiseF(x, y); x *= 2; y *= 2; amp *= 0.5; }
+      return val;
+    }
+
+    // --- Canvas 2D Dormant Animation ---
+    dormantCanvas.width = window.innerWidth;
+    dormantCanvas.height = window.innerHeight;
+    window.addEventListener('resize', () => {
+      dormantCanvas.width = window.innerWidth;
+      dormantCanvas.height = window.innerHeight;
+    });
+
+    const dctx = dormantCanvas.getContext('2d');
+    let halos = [];
+
+    function drawBlob(ctx, cx, cy, radius, color, xOffset, yOffset, t) {
+      ctx.beginPath();
+      for (let i = 0; i <= 64; i++) {
+        const angle = (i / 64) * Math.PI * 2;
+        const n = fBmF(Math.cos(angle) * 2 + t * 0.3, Math.sin(angle) * 2 + t * 0.3, 5);
+        const r = radius * (0.8 + 0.4 * n);
+        const x = cx + (xOffset || 0) + Math.cos(angle) * r;
+        const y = cy + (yOffset || 0) + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    function drawDormant(ts) {
+      const t = ts * 0.001;
+      const W = dormantCanvas.width;
+      const H = dormantCanvas.height;
+      const cx = W / 2;
+      const cy = H / 2;
+      const baseR = 6 + 5 * (0.5 + 0.5 * Math.sin(t * 0.8));
+
+      dctx.clearRect(0, 0, W, H);
+
+      // Cold blue interior
+      const grad = dctx.createRadialGradient(cx, cy, 0, cx, cy, baseR * 2.5);
+      grad.addColorStop(0, 'rgba(5,15,60,0.10)');
+      grad.addColorStop(1, 'transparent');
+      dctx.fillStyle = grad;
+      dctx.fillRect(0, 0, W, H);
+
+      // Three organic blobs with screen blending
+      dctx.globalCompositeOperation = 'screen';
+      drawBlob(dctx, cx, cy, baseR * 1.00, '#ff003c', baseR * 0.35, 0, t);
+      drawBlob(dctx, cx, cy, baseR * 0.82, '#ffffff', 0, 0, t);
+      drawBlob(dctx, cx, cy, baseR * 0.65, '#00f0ff', -baseR * 0.28, 0, t);
+
+      // Perpendicular blobs
+      drawBlob(dctx, cx, cy, baseR * 0.5, '#ff00cc', 0, baseR * 0.3, t);
+      drawBlob(dctx, cx, cy, baseR * 0.5, '#00ffee', 0, -baseR * 0.3, t);
+
+      // White rim
+      dctx.globalCompositeOperation = 'source-over';
+      dctx.beginPath();
+      for (let i = 0; i <= 64; i++) {
+        const angle = (i / 64) * Math.PI * 2;
+        const n = fBmF(Math.cos(angle) * 2 + t * 0.3, Math.sin(angle) * 2 + t * 0.3, 5);
+        const r = baseR * 0.95 * (0.8 + 0.4 * n);
+        const x = cx + Math.cos(angle) * r;
+        const y = cy + Math.sin(angle) * r;
+        if (i === 0) dctx.moveTo(x, y); else dctx.lineTo(x, y);
+      }
+      dctx.closePath();
+      dctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      dctx.lineWidth = 1;
+      dctx.filter = 'blur(1px)';
+      dctx.stroke();
+      dctx.filter = 'none';
+
+      // Expanding ring halos
+      for (let i = 0; i < halos.length; i++) {
+        const elapsed = t - halos[i].start;
+        let progress = elapsed / 3.0;
+        if (progress > 1) {
+          // Restart with staggered offset
+          halos[i].start = t - ((t - halos[i].start) % 3.0);
+          progress = ((t - halos[i].start)) / 3.0;
+        }
+        const scale = 1 + progress * 8;
+        const opacity = 0.7 * (1 - progress);
+        dctx.beginPath();
+        dctx.arc(cx, cy, baseR * scale, 0, Math.PI * 2);
+        dctx.strokeStyle = `rgba(255,255,255,${opacity})`;
+        dctx.lineWidth = 0.5;
+        dctx.stroke();
+      }
+    }
+
+    // --- Dormant loop start/stop ---
+    let dormantRafId = null;
+    function startDormantLoop() {
+      if (dormantRafId) return;
+      const now = performance.now() * 0.001;
+      halos = [{ start: now }, { start: now - 1 }, { start: now - 2 }];
+      function loop(ts) {
+        drawDormant(ts);
+        dormantRafId = requestAnimationFrame(loop);
+      }
+      dormantRafId = requestAnimationFrame(loop);
+    }
+    function stopDormantLoop() {
+      if (dormantRafId) { cancelAnimationFrame(dormantRafId); dormantRafId = null; }
+    }
+
+    // --- Audio (Web Audio API, lazy init) ---
+    let audioCtx = null;
+    function playBeep() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch (e) { /* fail silently */ }
+    }
+
+    // --- Socket.io Setup and State Machine ---
+    const socket = io({ transports: ['websocket'] });
+    let currentRoomId = null;
+    let chromaFlashTimeout = null;
+
+    socket.on('connect', () => { socket.emit('totem:ready'); });
+
+    // State 1: server:init handler
+    socket.on('server:init', ({ roomId, phoneUrl }) => {
+      currentRoomId = roomId;
+      QRCode.toCanvas(document.getElementById('qr-canvas'), phoneUrl, { width: 200, margin: 2 });
+      document.getElementById('room-id').textContent = roomId;
+      document.getElementById('phone-url').textContent = phoneUrl;
+      document.getElementById('corner-bl').textContent = 'ROOM \u00B7 ' + roomId;
+    });
+
+    // State 1 -> State 2: phone connected
+    socket.on('totem:phone-connected', () => {
+      document.getElementById('qr-screen').style.display = 'none';
+      dormantCanvas.style.display = 'block';
+      startDormantLoop();
+      const dot = document.querySelector('#corner-br .dot');
+      dot.classList.add('active');
+      document.querySelector('#corner-br .label').textContent = 'CONNECTED';
+    });
+
+    // State 2 -> State 1: phone disconnected
+    socket.on('phone:disconnected', () => {
+      document.getElementById('qr-screen').style.display = 'flex';
+      dormantCanvas.style.display = 'none';
+      stopDormantLoop();
+      const dot = document.querySelector('#corner-br .dot');
+      dot.classList.remove('active');
+      document.querySelector('#corner-br .label').textContent = 'WAITING';
+      // Also reset any active wave
+      waveActive = false;
+      currentWave = 0.0;
+      currentStrength = 0.0;
+    });
+
+    // State 2 -> State 3: ping received
+    socket.on('server:ping', () => {
+      triggerWave(0.5, 0.5);
+    });
+
+    // Latency display with chromatic flash
+    socket.on('server:latency', ({ latencyMs }) => {
+      const el = document.getElementById('latency-display');
+      el.textContent = latencyMs;
+      // Restart flash if already active
+      if (chromaFlashTimeout) { clearTimeout(chromaFlashTimeout); el.classList.remove('chroma-flash'); }
+      // Force reflow to restart animation
+      void el.offsetWidth;
+      el.classList.add('chroma-flash');
+      chromaFlashTimeout = setTimeout(() => { el.classList.remove('chroma-flash'); chromaFlashTimeout = null; }, 500);
+    });
+  </script>
 </body>
 </html>
