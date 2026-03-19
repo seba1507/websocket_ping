@@ -100,8 +100,9 @@
       transform: translate(-50%, -50%);
       font-size: 6rem;
       font-weight: bold;
-      color: rgba(255, 255, 255, 0.9);
+      color: rgba(255, 255, 255, 0.95);
       letter-spacing: 0.05em;
+      text-shadow: 0 0 20px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.8);
     }
 
     .chroma-flash {
@@ -113,8 +114,9 @@
       bottom: 20px;
       left: 24px;
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.7);
       letter-spacing: 0.1em;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.9);
     }
 
     /* Ajustes para hacer el "CONNECTED" mucho más grande e impactante */
@@ -123,13 +125,13 @@
       bottom: 24px;
       right: 28px;
       font-size: 1.5rem;
-      /* Aumento drástico de tamaño */
       font-weight: 700;
-      color: rgba(255, 255, 255, 0.8);
+      color: rgba(255, 255, 255, 0.9);
       letter-spacing: 0.15em;
       display: flex;
       align-items: center;
       gap: 14px;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.9);
     }
 
     #corner-br .dot {
@@ -308,7 +310,7 @@
       renderer.setClearColor(0x000000, 1); // Fondo negro (se fusionará con screen blending)
 
       const renderScene = new RenderPass(scene, camera);
-      const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.3, 0.35);
+      const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.2, 0.5);
       const outputPass = new OutputPass();
 
       composer = new EffectComposer(renderer);
@@ -374,6 +376,7 @@
       });
 
       sphere = new THREE.Mesh(geometry, sphereMaterial);
+      sphere.scale.set(0.45, 0.45, 0.45);
       scene.add(sphere);
     }
     initThreeJS();
