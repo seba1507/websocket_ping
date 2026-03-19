@@ -10,7 +10,7 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // --- Utilities ---
 
@@ -25,20 +25,36 @@ function generateRoomId() {
 
 function getLanIp() {
   const interfaces = os.networkInterfaces();
+  const virtualPrefixes = ['172.', '169.254.'];
+  let fallback = null;
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
+      if (iface.family !== 'IPv4' || iface.internal) continue;
+      if (virtualPrefixes.some(p => iface.address.startsWith(p))) {
+        fallback = fallback || iface.address;
+        continue;
       }
+      return iface.address;
     }
   }
-  return 'localhost';
+  return fallback || 'localhost';
 }
 
 // --- State ---
 const roomId = generateRoomId();
 const lanIp = getLanIp();
-const phoneUrl = `http://${lanIp}:${PORT}/phone?room=${roomId}`;
+
+function getBaseUrl() {
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL;
+  }
+  return `http://${lanIp}:${PORT}`;
+}
+
+const phoneUrl = `${getBaseUrl()}/phone?room=${roomId}`;
 
 // --- Static files ---
 app.use(express.static(path.join(__dirname, 'public')));
