@@ -203,7 +203,7 @@
 
       const renderScene = new RenderPass(scene, camera);
       // Base bloom moderado
-      bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.2, 0.3);
+      bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 0.2, 0.4);
       const outputPass = new OutputPass();
 
       composer = new EffectComposer(renderer);
@@ -260,7 +260,7 @@
 
             // Núcleo blanco caliente durante el impacto
             vec3 coreHeat = vec3(1.0) * uPulse;
-            color += uColorGlow * fresnel * (2.0 + uPulse * 3.0) + coreHeat;
+            color += uColorGlow * fresnel * (0.3 + uPulse * 4.0) + coreHeat;
 
             float alpha = mix(0.15, 1.0, fresnel);
             gl_FragColor = vec4(color, alpha);
@@ -320,7 +320,7 @@
         sphereMaterial.uniforms.uPulse.value = currentPulse;
 
         // BLOOM SURGE (Sobrecarga de luz)
-        bloomPass.strength = 0.5 + (currentPulse * 3.5);
+        bloomPass.strength = 0.2 + (currentPulse * 1.5);
 
         // LATIGAZO ROTACIONAL Y ESCALADO
         sphere.rotation.y += 0.002 + (currentPulse * 0.1); // Gira rápido al impactar
