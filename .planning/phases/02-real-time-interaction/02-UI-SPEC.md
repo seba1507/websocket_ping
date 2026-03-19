@@ -55,6 +55,8 @@ Source: existing `phone.html` and `totem.html` inline styles.
 
 ## Typography
 
+Active type scale for Phase 2 (exactly 4 sizes, 2 weights):
+
 | Role | Size | Weight | Line Height | Element |
 |------|------|--------|-------------|---------|
 | Body / Status | 1.2rem (~19px) | 400 | 1.5 | `#status` on phone |
@@ -62,13 +64,16 @@ Source: existing `phone.html` and `totem.html` inline styles.
 | Button | 2rem (32px) | 700 (bold) | 1.2 | `#ping-btn` label ("SEND PING") |
 | Display / Latency | 4rem (64px) | 700 (bold) | 1.2 | `#latency-display` on Totem |
 
-Additional existing sizes (do not change):
-- Totem `#status`: 1.5rem, weight 400
-- Totem `#room-id`: 3rem, weight 700, letter-spacing 0.4em
-- Totem `#phone-url`: 0.85rem, weight 400
+Weights in use: 400 (regular) and 700 (bold) — no other weights permitted.
 
 Font: `'Courier New', monospace` on all elements — inherited, do not override.
 Letter-spacing on status elements: 0.05em. Letter-spacing on `#ping-btn`: 0.15em.
+
+> **Constraints — Phase 1 inherited DOM values (read-only, do not change):**
+> The following sizes exist in the Phase 1 HTML and must be left as-is. They are not part of the Phase 2 type scale and must not be reused for new elements.
+> - Totem `#status`: 1.5rem, weight 400
+> - Totem `#room-id`: 3rem, weight 700, letter-spacing 0.4em
+> - Totem `#phone-url`: 0.85rem, weight 400
 
 Source: existing `phone.html` and `totem.html` inline styles.
 
@@ -99,6 +104,10 @@ Default text: `#f0f0f0` on dark background.
 Flash behavior (no CSS transitions/animations — instant swap only):
 - Totem: `document.body.style.background = '#39ff14'` → restore to `#1a1a1a` after 200ms
 - Phone: same pattern on `server:pong` receipt, concurrently with haptic
+
+**Focal points:**
+- Primary focal point — Totem: `#latency-display`
+- Primary focal point — Phone: `#ping-btn`
 
 Source: CONTEXT.md `<decisions>`, `<code_context>`, REQUIREMENTS.md INT-02, existing HTML inline styles.
 
