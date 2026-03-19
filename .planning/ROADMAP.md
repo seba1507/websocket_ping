@@ -65,7 +65,11 @@ Plans:
   2. phone.html is self-contained — no phone.js dependency; glassmorphism button emits phone:ping.
   3. totem.js and phone.js are deleted.
   4. All existing socket events (server:init, totem:phone-connected, server:latency, etc.) continue working end-to-end.
-**Plans**: 0 plans
+**Plans**: 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Totem rewrite: self-contained WebGL wave + Canvas 2D dormant + socket logic
+- [ ] 04-02-PLAN.md — Phone rewrite: self-contained glassmorphism UI + file deletions + e2e verification
 
 ## Progress
 
@@ -77,4 +81,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Base Connection | 2/2 | Complete | 2026-03-19 |
 | 2. Real-time Interaction | 1/2 | In Progress|  |
 | 3. Connection Resilience | 0/2 | Not started | - |
-| 4. UI Redesign | 0/0 | Not started | - |
+| 4. UI Redesign | 0/2 | Not started | - |
