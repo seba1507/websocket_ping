@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 04-01-PLAN.md
+stopped_at: Paused at 04-02-PLAN.md checkpoint:human-verify (Task 3)
 last_updated: "2026-03-19T19:14:25.155Z"
 progress:
   total_phases: 4
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-19)
 ## Current Position
 
 Phase: 04 (ui-redesign) — EXECUTING
-Plan: 1 of 2
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Plan: 1 of 2
 *Updated after each plan completion*
 | Phase 02-real-time-interaction P01 | 525599 | 2 tasks | 3 files |
 | Phase 04-ui-redesign P01 | 15 | 1 tasks | 1 files |
+| Phase 04-ui-redesign P02 | 3 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,8 @@ Recent decisions affecting current work:
 - [Phase 02-real-time-interaction]: phone:latency emitted after pong received with {roomId, latencyMs} for Totem forwarding; CSS transition removed from #ping-btn for instant state swaps
 - [Phase 04-ui-redesign]: WebGL single-program dual-mode: u_wave=0 for idle (no shader swap), wave code short-circuits naturally
 - [Phase 04-ui-redesign]: Self-contained HTML files: all socket logic, WebGL, and Canvas 2D inlined; totem.js removed
+- [Phase 04-ui-redesign P02]: Phone glassmorphism button uses opacity:0.3 + pointer-events:none for in-flight state; re-enabled on server:pong
+- [Phase 04-ui-redesign P02]: Press sequence is 3-step at specific offsets: impact flash 0ms, ripple 0ms, chromatic ghost text-shadow 60ms
 
 ### Pending Todos
 
@@ -73,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-19T19:14:25.152Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-19T19:15:09Z
+Stopped at: Paused at 04-02-PLAN.md checkpoint:human-verify (Task 3 — end-to-end verification)
 Resume file: None
