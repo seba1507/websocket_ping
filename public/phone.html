@@ -1,116 +1,197 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Ping-Pong Phone</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%; height: 100%; overflow: hidden;
-      background: #000;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #020202;
+      /* Fondo oscuro consistente con el tótem */
       font-family: 'Courier New', monospace;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-direction: column;
-      /* grid overlay */
-      background-image:
-        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
-      background-size: 16px 16px;
     }
 
     #connecting-screen {
-      font-size: 9px; letter-spacing: 0.15em;
-      color: rgba(255,255,255,0.08);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: rgba(255, 255, 255, 0.4);
       animation: blink-connect 2.4s ease-in-out infinite;
     }
-    @keyframes blink-connect { 0%,100% { opacity: 0.4; } 50% { opacity: 1.0; } }
+
+    @keyframes blink-connect {
+
+      0%,
+      100% {
+        opacity: 0.4;
+      }
+
+      50% {
+        opacity: 1.0;
+      }
+    }
 
     #error-screen {
       display: none;
-      font-size: 11px; color: #ff4444; text-align: center; padding: 20px;
+      font-size: 11px;
+      color: #ff00cc;
+      text-align: center;
+      padding: 20px;
     }
 
     #game-screen {
       display: none;
-      flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-      width: 100%; height: 100%;
-      /* radial gradient overlay for connected state */
-      background: radial-gradient(ellipse 80% 50% at 50% 50%, rgba(5,12,55,0.35) 0%, transparent 65%);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      width: 100%;
+      height: 100%;
+      /* Resplandor radial azul oscuro idéntico al del shader del tótem */
+      background: radial-gradient(ellipse 80% 50% at 50% 50%, rgba(5, 15, 60, 0.6) 0%, transparent 75%);
     }
 
     #ping-btn {
-      position: relative; overflow: hidden;
-      width: 80vw; max-width: 360px; height: 110px;
-      border-radius: 22px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
+      position: relative;
+      overflow: hidden;
+      width: 80vw;
+      max-width: 360px;
+      height: 120px;
+      border-radius: 24px;
+
+      /* NUEVO FONDO: Degradado profundo (Índigo a Azul Oscuro) con efecto cristal */
+      background: linear-gradient(135deg, rgba(40, 10, 70, 0.85) 0%, rgba(10, 30, 80, 0.85) 100%);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
+
+      border: 2px solid transparent;
       cursor: pointer;
       font-family: 'Courier New', monospace;
-      animation: chroma-pulse 3s ease-in-out infinite;
-      transition: none;
+      animation: neon-pulse 3s ease-in-out infinite;
+      transition: transform 0.1s ease-out, opacity 0.2s;
       outline: none;
       -webkit-tap-highlight-color: transparent;
+
+      /* Sombra extra para despegar el botón del fondo */
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
     }
 
-    @keyframes chroma-pulse {
-      0%,100% {
-        box-shadow: 0 0 0 1px rgba(255,255,255,0.02),
-                    inset 0 1px 0 rgba(255,255,255,0.05),
-                    -6px 0 16px rgba(255,0,60,0.05),
-                    6px 0 16px rgba(0,240,255,0.05);
+    /* El botón respira entre Cyan y Magenta, sincronizado con la anomalía */
+    @keyframes neon-pulse {
+
+      0%,
+      100% {
+        border-color: rgba(0, 240, 255, 0.8);
+        box-shadow: 0 0 20px rgba(0, 240, 255, 0.4), inset 0 0 10px rgba(0, 240, 255, 0.2);
       }
+
       50% {
-        box-shadow: 0 0 0 1px rgba(255,255,255,0.04),
-                    inset 0 1px 0 rgba(255,255,255,0.08),
-                    -10px 0 24px rgba(255,0,60,0.12),
-                    10px 0 24px rgba(0,240,255,0.12);
+        border-color: rgba(255, 0, 204, 0.8);
+        box-shadow: 0 0 20px rgba(255, 0, 204, 0.4), inset 0 0 10px rgba(255, 0, 204, 0.2);
       }
     }
 
     #btn-label {
-      font-size: 12px; letter-spacing: 0.2em;
-      color: rgba(255,255,255,0.65);
+      font-size: 18px;
+      /* Texto más grande */
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: #ffffff;
+      /* Blanco puro para contraste total */
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
       pointer-events: none;
+      transition: all 0.2s;
     }
 
     #room-label {
-      font-size: 8px; color: #1a1a1a; letter-spacing: 0.1em;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.15em;
     }
 
     #corner-br {
-      position: fixed; bottom: 14px; right: 16px;
-      font-size: 7px; color: rgba(255,255,255,0.3); letter-spacing: 0.1em;
-      display: none; /* shown in State 2 */
-      align-items: center; gap: 5px;
+      position: fixed;
+      bottom: 20px;
+      right: 24px;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.6);
+      letter-spacing: 0.15em;
+      display: none;
+      /* shown in State 2 */
+      align-items: center;
+      gap: 8px;
     }
+
     #corner-br .dot {
-      display: inline-block; width: 5px; height: 5px; border-radius: 50%;
-      background: #00ff87; box-shadow: 0 0 6px #00ff87;
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00ff87;
+      box-shadow: 0 0 8px #00ff87;
       animation: pulse-dot 2s ease-in-out infinite;
     }
-    @keyframes pulse-dot { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
-    #corner-br .label { color: rgba(255,255,255,0.3); }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        opacity: 0.7;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    #corner-br .label {
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: bold;
+    }
 
     /* Ripple animation */
     .ripple {
-      position: absolute; border-radius: 50%; pointer-events: none;
-      background: rgba(255,255,255,0.08);
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      background: rgba(255, 255, 255, 0.15);
+      /* Ripple más brillante */
       animation: ripple-expand 400ms ease-out forwards;
     }
+
     @keyframes ripple-expand {
-      from { transform: scale(0); opacity: 1; }
-      to { transform: scale(4.5); opacity: 0; }
+      from {
+        transform: scale(0);
+        opacity: 1;
+      }
+
+      to {
+        transform: scale(4.5);
+        opacity: 0;
+      }
     }
   </style>
 </head>
+
 <body>
   <div id="connecting-screen">CONNECTING...</div>
   <div id="error-screen"></div>
   <div id="game-screen">
-    <button id="ping-btn"><span id="btn-label">SEND PING</span></button>
+    <button id="ping-btn"><span id="btn-label">ENVIAR PULSO</span></button>
     <div id="room-label"></div>
   </div>
   <div id="corner-br">
@@ -135,16 +216,13 @@
       connectScreen.style.display = 'none';
       errorScreen.style.display = 'block';
       errorScreen.textContent = 'Error: No room ID in URL.';
-      // Terminal state — no socket init
     } else {
       const socket = io({ transports: ['websocket'] });
 
-      // On connect (and reconnect), join room
       socket.on('connect', () => {
         socket.emit('phone:join', { roomId });
       });
 
-      // server:joined -> State 2
       socket.on('server:joined', () => {
         connectScreen.style.display = 'none';
         errorScreen.style.display = 'none';
@@ -153,7 +231,6 @@
         roomLabel.textContent = 'ROOM \u00B7 ' + roomId;
       });
 
-      // server:error -> terminal
       socket.on('server:error', ({ message }) => {
         connectScreen.style.display = 'none';
         gameScreen.style.display = 'none';
@@ -162,9 +239,7 @@
         errorScreen.textContent = 'Error: ' + message;
       });
 
-      // disconnect -> back to State 1
       socket.on('disconnect', () => {
-        // Reset in-flight state if pending
         if (pingBtn.disabled) {
           pingTimestamp = null;
           pingBtn.disabled = false;
@@ -182,21 +257,20 @@
       function handlePress(event) {
         if (pingBtn.disabled) return;
 
-        // Store timestamp and disable
         pingTimestamp = Date.now();
         pingBtn.disabled = true;
         pingBtn.style.pointerEvents = 'none';
         socket.emit('phone:ping', { roomId });
 
-        // Step 1: Impact flash (0ms, 80ms)
-        pingBtn.style.transform = 'scale(0.96)';
-        pingBtn.style.background = 'rgba(255,255,255,0.10)';
+        // Step 1: Impact flash (hundimiento y brillo intenso)
+        pingBtn.style.transform = 'scale(0.92)';
+        pingBtn.style.background = 'rgba(255, 255, 255, 0.2)';
         setTimeout(() => {
           pingBtn.style.transform = '';
-          pingBtn.style.background = 'rgba(255,255,255,0.04)';
+          pingBtn.style.background = ''; // Vuelve al oscuro del CSS
         }, 80);
 
-        // Step 2: Internal ripple (0ms, 400ms)
+        // Step 2: Internal ripple
         const rect = pingBtn.getBoundingClientRect();
         let rippleX, rippleY;
         if (event.clientX !== undefined && event.clientX !== 0) {
@@ -219,30 +293,31 @@
         pingBtn.appendChild(ripple);
         ripple.addEventListener('animationend', () => ripple.remove());
 
-        // Step 3: Chromatic ghost (60ms offset, 300ms duration)
+        // Step 3: Chromatic ghost en el texto
         setTimeout(() => {
-          btnLabel.style.textShadow = '2px 0 rgba(255,0,60,0.85), -2px 0 rgba(0,240,255,0.85)';
-          btnLabel.style.color = 'rgba(255,255,255,0.95)';
+          btnLabel.style.textShadow = '3px 0 rgba(255,0,204,0.9), -3px 0 rgba(0,240,255,0.9)';
+          btnLabel.style.color = '#ffffff';
           ghostTimeout = setTimeout(() => {
-            btnLabel.style.textShadow = '';
-            btnLabel.style.color = 'rgba(255,255,255,0.65)';
+            btnLabel.style.textShadow = '0 0 8px rgba(255,255,255,0.4)';
             ghostTimeout = null;
           }, 300);
         }, 60);
 
         // In-flight state
-        pingBtn.style.opacity = '0.3';
+        pingBtn.style.opacity = '0.4';
       }
 
       pingBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handlePress(e); }, { passive: false });
       pingBtn.addEventListener('click', handlePress);
 
-      // --- server:pong handler ---
       socket.on('server:pong', () => {
         if (!pingTimestamp) return;
         const latencyMs = Date.now() - pingTimestamp;
         socket.emit('phone:latency', { roomId, latencyMs });
-        if (navigator.vibrate) navigator.vibrate(80);
+
+        // Feedback háptico
+        if (navigator.vibrate) navigator.vibrate([40, 30, 40]); // Doble vibración corta para el retorno
+
         // Re-enable button
         pingBtn.disabled = false;
         pingBtn.style.opacity = '1';
@@ -251,4 +326,5 @@
     }
   </script>
 </body>
+
 </html>

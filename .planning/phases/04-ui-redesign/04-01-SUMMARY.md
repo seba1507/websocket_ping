@@ -9,17 +9,19 @@ requires:
     provides: socket events server:ping, server:latency, totem:phone-connected, phone:disconnected, server:init
 
 provides:
-  - Self-contained totem.html with WebGL chromatic wave shader, Canvas 2D dormant blob animation, 880Hz beep, and full 3-state socket machine
+  - Self-contained totem.html with WebGL chromatic wave shader, Three.js bloom anomaly, 880Hz beep, and full 3-state socket machine
 
 affects:
   - 04-02 (phone UI redesign — shares same visual language and socket event patterns)
 
 tech-stack:
-  added: []
+  added:
+    - Three.js r0.160.0 via importmap — IcosahedronGeometry + simplex noise vertex shader + UnrealBloomPass
   patterns:
-    - "Single-file self-contained HTML: all CSS in <style>, all JS in <script>, CDN scripts only (socket.io + qrcode)"
-    - "WebGL single-program dual-mode: idle (bgA grid) vs wave mode controlled by u_wave/u_strength uniforms"
-    - "Canvas 2D screen-blending organic blobs: 64-point fBm-modulated paths per frame"
+    - "Single-file self-contained HTML with importmap for Three.js module resolution"
+    - "Two-canvas architecture: WebGL (z-index:0) for wave bg, Three.js (z-index:1, mix-blend-mode:screen) for anomaly"
+    - "WebGL single-program dual-mode: idle (bgA vignette) vs wave mode via u_wave/u_strength/u_bgBlend uniforms"
+    - "u_bgBlend uniform enables 1s blue fade-out after wave completes (waveFading state)"
     - "Lazy AudioContext: created on first server:ping, fail-silent for autoplay policy"
 
 key-files:
@@ -28,13 +30,17 @@ key-files:
     - public/totem.html
 
 key-decisions:
-  - "WebGL shader uses single program with u_wave=0 for idle mode (no shader swap)"
-  - "Canvas 2D dormant animation uses JS fBm (sin/cos approximation) matching GLSL shader logic"
-  - "triggerWave always fires from UV (0.5,0.5) — screen center — as specified"
-  - "Wave duration 2s yields u_wave from 0 to 1.6; u_strength gaussian peaks at u_wave=0.35"
+  - "WebGL shader uses single program with u_wave=0 for idle mode; u_bgBlend uniform controls post-wave blue fade-out"
+  - "bgA() changed from grid pattern to vignette gradient (dark center to pure black at edges) — cleaner look"
+  - "Canvas 2D dormant blobs replaced by Three.js IcosahedronGeometry with simplex noise displacement + UnrealBloom"
+  - "Three.js canvas uses mix-blend-mode:screen so bloom fuses with WebGL wave naturally"
+  - "triggerWave always fires from UV (0.5,0.5); anomalyPulse=1.0 triggers simultaneous 3D pulse"
+  - "Wave chromatic aberration: 3x separate UV displacement (uvR/uvG/uvB) with different dir/perp offsets"
+  - "importmap required: Three.js jsm addons import bare 'three' specifier"
 
 patterns-established:
-  - "State machine: QR screen (State 1) / dormant Canvas 2D (State 2) / WebGL wave (State 3)"
+  - "State machine: QR screen (State 1) / Three.js anomaly (State 2) / WebGL wave + anomaly pulse (State 3)"
+  - "Unified renderAll() loop drives both WebGL drawArrays and Three.js composer.render() per frame"
   - "Chroma flash: remove class, force reflow (void el.offsetWidth), re-add class for restart"
 
 requirements-completed: [UI-01]

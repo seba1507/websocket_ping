@@ -1,0 +1,37 @@
+<h2>Phone — before room join</h2>
+<p class="subtitle">What does the user see on the phone screen while it's still connecting to the room?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#000;height:200px;display:flex;align-items:center;justify-content:center;border-radius:8px;">
+      <div style="width:80%;height:90px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;">
+        <span style="font-family:monospace;letter-spacing:0.2em;color:rgba(255,255,255,0.2);font-size:13px;">SEND PING</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Button dimmed</h3>
+      <p>Button visible from the start but very faded (opacity ~0.2) and non-interactive. Becomes fully visible when connected.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#000;height:200px;display:flex;align-items:center;justify-content:center;border-radius:8px;">
+      <span style="font-family:monospace;font-size:11px;color:rgba(255,255,255,0.2);letter-spacing:0.15em;">CONNECTING…</span>
+    </div>
+    <div class="card-body">
+      <h3>B — Pure black, subtle text</h3>
+      <p>Totally black screen with a faint monospace "CONNECTING…" that disappears once joined and the button fades in.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#000;height:200px;display:flex;align-items:center;justify-content:center;border-radius:8px;">
+    </div>
+    <div class="card-body">
+      <h3>C — Pure black, nothing</h3>
+      <p>Absolute black screen — no text, no button — until the socket join is confirmed. Then button slides/fades in.</p>
+    </div>
+  </div>
+
+</div>

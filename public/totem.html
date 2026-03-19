@@ -1,56 +1,177 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ping-Pong Totem</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #020202; font-family: 'Courier New', monospace; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    #webgl-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
-    #dormant-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; display: none; }
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #020202;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* Fondo de distorsión WebGL (Onda expansiva) */
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+    }
+
+    /* Nueva Anomalía 3D (Reemplaza al dormant-canvas) */
+    #three-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      mix-blend-mode: screen;
+      /* Clave para que el bloom se fusione con la onda de fondo */
+    }
 
     #qr-screen {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
       background: transparent;
     }
-    #qr-screen #qr-canvas { border: 2px solid rgba(255,255,255,0.05); border-radius: 8px; background: #fff; padding: 12px; }
-    #qr-screen #room-id { font-size: 2.5rem; font-weight: bold; letter-spacing: 0.4em; color: rgba(255,255,255,0.15); }
-    #qr-screen #phone-url { font-size: 0.7rem; color: rgba(255,255,255,0.06); max-width: 500px; text-align: center; word-break: break-all; }
 
-    #overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; }
+    #qr-screen #qr-canvas {
+      border: 2px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+    }
+
+    #qr-screen #room-id {
+      font-size: 2.5rem;
+      font-weight: bold;
+      letter-spacing: 0.4em;
+      color: rgba(255, 255, 255, 0.15);
+    }
+
+    #qr-screen #phone-url {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.06);
+      max-width: 500px;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+      pointer-events: none;
+    }
+
     #latency-display {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      font-size: 6rem; font-weight: bold; color: rgba(255,255,255,0.9); letter-spacing: 0.05em;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 6rem;
+      font-weight: bold;
+      color: rgba(255, 255, 255, 0.9);
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 12px rgba(0,0,0,1), 0 0 30px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,1);
     }
-    .chroma-flash { text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff; }
 
-    #corner-bl { position: absolute; bottom: 14px; left: 16px; font-size: 7px; color: #1e1e1e; letter-spacing: 0.1em; }
-    #corner-br {
-      position: absolute; bottom: 14px; right: 16px; font-size: 7px; color: rgba(255,255,255,0.3); letter-spacing: 0.1em;
-      display: flex; align-items: center; gap: 5px;
+    .chroma-flash {
+      text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff, 0 0 12px rgba(0,0,0,1), 0 0 30px rgba(0,0,0,0.9);
     }
+
+    #corner-bl {
+      position: absolute;
+      bottom: 20px;
+      left: 24px;
+      font-size: 14px;
+      color: #1e1e1e;
+      letter-spacing: 0.1em;
+    }
+
+    /* Ajustes para hacer el "CONNECTED" mucho más grande e impactante */
+    #corner-br {
+      position: absolute;
+      bottom: 24px;
+      right: 28px;
+      font-size: 1.5rem;
+      /* Aumento drástico de tamaño */
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.8);
+      letter-spacing: 0.15em;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
     #corner-br .dot {
-      display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      /* Punto más grande */
+      border-radius: 50%;
       background: #1a1a1a;
     }
+
     #corner-br .dot.active {
-      background: #00ff87; box-shadow: 0 0 6px #00ff87;
+      background: #00ff87;
+      box-shadow: 0 0 12px #00ff87;
       animation: pulse-dot 2s ease-in-out infinite;
     }
-    @keyframes pulse-dot { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        opacity: 0.7;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
   </style>
 </head>
+
 <body>
   <canvas id="webgl-canvas"></canvas>
-  <canvas id="dormant-canvas"></canvas>
+  <canvas id="three-canvas"></canvas>
+
   <div id="qr-screen">
     <canvas id="qr-canvas"></canvas>
     <div id="room-id"></div>
     <div id="phone-url"></div>
   </div>
+
   <div id="overlay">
     <div id="latency-display"></div>
     <div id="corner-bl"></div>
@@ -59,413 +180,314 @@
       <span class="label">WAITING</span>
     </div>
   </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    // --- WebGL Setup ---
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+    // ==========================================
+    // 1. SISTEMA RAW WEBGL (ONDA DE FONDO)
+    // ==========================================
     const webglCanvas = document.getElementById('webgl-canvas');
     webglCanvas.width = window.innerWidth;
     webglCanvas.height = window.innerHeight;
     const gl = webglCanvas.getContext('webgl');
 
-    const VS_SRC = `
-      attribute vec2 a_pos;
-      void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
-    `;
-
+    const VS_SRC = `attribute vec2 a_pos; void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }`;
     const FS_SRC = `
       precision mediump float;
-      uniform vec2 u_res;
-      uniform float u_time;
-      uniform float u_wave;
-      uniform float u_strength;
-      uniform vec2 u_origin;
-
-      float hash(vec2 p) {
-        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-      }
-
+      uniform vec2 u_res; uniform float u_time; uniform float u_wave; uniform float u_strength; uniform vec2 u_origin; uniform float u_bgBlend;
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p) {
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-        f = f * f * (3.0 - 2.0 * f);
-        float a = hash(i);
-        float b = hash(i + vec2(1.0, 0.0));
-        float c = hash(i + vec2(0.0, 1.0));
-        float d = hash(i + vec2(1.0, 1.0));
-        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+        vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
       }
-
       float fBm(vec2 p) {
-        float val = 0.0;
-        float amp = 0.5;
-        for (int i = 0; i < 5; i++) {
-          val += amp * noise(p);
-          p *= 2.0;
-          amp *= 0.5;
-        }
-        return val;
+        float val = 0.0; float amp = 0.5;
+        for (int i = 0; i < 5; i++) { val += amp * noise(p); p *= 2.0; amp *= 0.5; } return val;
       }
-
       vec3 bgA(vec2 fragCoord) {
-        vec3 col = vec3(0.008);
-        vec2 grid = mod(fragCoord, 16.0);
-        if (grid.x < 1.0 || grid.y < 1.0) {
-          col = vec3(0.051);
-        }
-        return col;
+        vec2 uv = fragCoord / u_res; float d = length(uv - vec2(0.5)); float vignette = smoothstep(0.0, 0.85, d);
+        return mix(vec3(0.012), vec3(0.0), vignette);
       }
-
       vec3 bgB(vec2 fragCoord, vec2 center, float radius) {
-        vec3 col = bgA(fragCoord);
-        float d = length(fragCoord - center) / radius;
-        float grad = 1.0 - smoothstep(0.0, 1.0, d);
-        col = mix(col, vec3(0.02, 0.059, 0.235), grad * 0.4);
-        return col;
+        vec3 col = bgA(fragCoord); float d = length(fragCoord - center) / radius; float grad = 1.0 - smoothstep(0.0, 1.0, d);
+        float brightnessDim = mix(0.5, 1.0, u_bgBlend * (1.0 - smoothstep(1.0, 1.6, u_wave)));
+        return mix(col, vec3(0.02, 0.059, 0.235) * brightnessDim, grad * 0.4);
       }
-
       void main() {
-        vec2 fragCoord = gl_FragCoord.xy;
-        vec2 uv = fragCoord / u_res;
-        uv.x *= u_res.x / u_res.y;
-
-        vec2 origin = u_origin;
-        origin.x *= u_res.x / u_res.y;
-
-        float dist = length(uv - origin);
+        vec2 fragCoord = gl_FragCoord.xy; vec2 uv = fragCoord / u_res; uv.x *= u_res.x / u_res.y;
+        vec2 origin = u_origin; origin.x *= u_res.x / u_res.y; float dist = length(uv - origin);
 
         if (u_wave <= 0.0) {
-          gl_FragColor = vec4(bgA(fragCoord), 1.0);
-          return;
+          if (u_bgBlend <= 0.001) { gl_FragColor = vec4(bgA(fragCoord), 1.0); return; }
+          vec2 center = u_res * u_origin; float fadeRadius = length(u_res) * 0.7;
+          gl_FragColor = vec4(mix(bgA(fragCoord), bgB(fragCoord, center, fadeRadius), u_bgBlend), 1.0); return;
         }
 
-        float organic = fBm(uv * 3.0);
-        float noisyDist = dist + (organic - 0.5) * 0.15 * u_strength;
+        float organic = fBm(uv * 3.0); float noisyDist = dist + (organic - 0.5) * 0.28 * u_strength;
+        float inBand = smoothstep(u_wave - 0.18, u_wave, noisyDist) * (1.0 - smoothstep(u_wave, u_wave + 0.02, noisyDist));
+        vec2 dir = normalize(uv - origin); vec2 perp = vec2(-dir.y, dir.x);
+        float localNoise = noise(uv * 15.0 + u_time * 2.0); float highFreqNoise = fBm(uv * 50.0 - u_time * 3.0); 
 
-        float bandWidth = 0.12;
-        float inBand = smoothstep(u_wave - bandWidth, u_wave, noisyDist)
-                     * (1.0 - smoothstep(u_wave, u_wave + 0.02, noisyDist));
+        vec2 uvR = uv + dir * (inBand * u_strength * 0.40) + perp * localNoise * 0.1;
+        vec2 uvG = uv + dir * (inBand * u_strength * 0.15) - perp * localNoise * 0.05;
+        vec2 uvB = uv - dir * (inBand * u_strength * 0.25) + dir * highFreqNoise * 0.08;
 
-        vec2 dir = normalize(uv - origin);
-        vec2 perp = vec2(-dir.y, dir.x);
-
-        float localNoise = noise(uv * 10.0 + u_time);
-
-        vec2 dispUV = uv + dir * inBand * u_strength * 0.03 + perp * localNoise * 0.01;
-
-        float r = fBm(dispUV * 1.00);
-        float g = fBm(dispUV * 0.82);
-        float b = fBm(dispUV * 0.65);
+        float r = smoothstep(0.2, 0.8, fBm(uvR * 4.0 + u_time * 0.5));
+        float g = smoothstep(0.2, 0.8, fBm(uvG * 4.0 - u_time * 0.3));
+        float b = smoothstep(0.2, 0.8, fBm(uvB * 4.0 + u_time * 0.4));
         vec3 chromatic = vec3(r, g, b);
 
-        float perpDot = dot(uv - origin, perp);
-        vec3 magenta = vec3(1.0, 0.0, 0.8);
-        vec3 cyan = vec3(0.0, 1.0, 0.933);
-        float flareStrength = inBand * u_strength * 0.5;
-        chromatic += magenta * max(perpDot, 0.0) * flareStrength;
-        chromatic += cyan * max(-perpDot, 0.0) * flareStrength;
+        float perpDot = dot(uv - origin, perp); float flareStrength = inBand * u_strength * 2.5; 
+        chromatic += vec3(1.0, 0.0, 0.8) * max(perpDot, 0.0) * flareStrength + vec3(0.0, 1.0, 0.933) * max(-perpDot, 0.0) * flareStrength;
+        chromatic += vec3(2.0) * smoothstep(u_wave - 0.04, u_wave - 0.01, noisyDist) * u_strength * inBand;
 
-        float rim = smoothstep(u_wave - 0.04, u_wave - 0.01, noisyDist);
-        chromatic += vec3(0.8) * rim * u_strength * inBand;
+        vec3 bgInside = bgB(fragCoord, u_res * u_origin, u_wave * length(u_res));
+        bgInside = bgInside * (1.0 + inBand * u_strength * 4.0) + mix(vec3(0.0), vec3(0.0, 0.5, 1.0), inBand * u_strength);
+        vec3 bg = mix(bgA(fragCoord), bgInside, (1.0 - smoothstep(u_wave - 0.01, u_wave + 0.01, noisyDist)) * u_bgBlend);
 
-        float viewportDiag = length(u_res);
-        vec3 bgInside = bgB(fragCoord, u_res * u_origin, u_wave * viewportDiag);
-        vec3 bgOutside = bgA(fragCoord);
-        float inside = 1.0 - smoothstep(u_wave - 0.01, u_wave + 0.01, noisyDist);
-
-        vec3 bg = mix(bgOutside, bgInside, inside);
-        vec3 finalColor = bg + chromatic * inBand * u_strength;
-
-        gl_FragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
+        gl_FragColor = vec4(clamp(bg + chromatic * inBand * u_strength * 3.0, 0.0, 1.0), 1.0);
       }
     `;
 
     function compileShader(gl, type, src) {
-      const s = gl.createShader(type);
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        console.error('Shader error:', gl.getShaderInfoLog(s));
-        gl.deleteShader(s);
-        return null;
-      }
-      return s;
+      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s;
     }
-
-    const vs = compileShader(gl, gl.VERTEX_SHADER, VS_SRC);
-    const fs = compileShader(gl, gl.FRAGMENT_SHADER, FS_SRC);
     const program = gl.createProgram();
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-    gl.useProgram(program);
+    gl.attachShader(program, compileShader(gl, gl.VERTEX_SHADER, VS_SRC));
+    gl.attachShader(program, compileShader(gl, gl.FRAGMENT_SHADER, FS_SRC));
+    gl.linkProgram(program); gl.useProgram(program);
 
-    const quadBuf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-
+    const quadBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     const aPosLoc = gl.getAttribLocation(program, 'a_pos');
-    gl.enableVertexAttribArray(aPosLoc);
-    gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(aPosLoc); gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 0, 0);
 
     const loc = {
-      u_res:      gl.getUniformLocation(program, 'u_res'),
-      u_time:     gl.getUniformLocation(program, 'u_time'),
-      u_wave:     gl.getUniformLocation(program, 'u_wave'),
-      u_strength: gl.getUniformLocation(program, 'u_strength'),
-      u_origin:   gl.getUniformLocation(program, 'u_origin'),
+      u_res: gl.getUniformLocation(program, 'u_res'), u_time: gl.getUniformLocation(program, 'u_time'),
+      u_wave: gl.getUniformLocation(program, 'u_wave'), u_strength: gl.getUniformLocation(program, 'u_strength'),
+      u_origin: gl.getUniformLocation(program, 'u_origin'), u_bgBlend: gl.getUniformLocation(program, 'u_bgBlend'),
     };
 
-    gl.uniform2f(loc.u_res, webglCanvas.width, webglCanvas.height);
-    gl.uniform2f(loc.u_origin, 0.5, 0.5);
-    gl.uniform1f(loc.u_wave, 0.0);
-    gl.uniform1f(loc.u_strength, 0.0);
+    gl.uniform2f(loc.u_res, webglCanvas.width, webglCanvas.height); gl.uniform2f(loc.u_origin, 0.5, 0.5);
+    let waveActive = false, waveFading = false, waveFadeStart = 0, waveStartTime = 0, currentWave = 0.0, currentStrength = 0.0, bgBlend = 0.0;
 
-    window.addEventListener('resize', () => {
-      webglCanvas.width = window.innerWidth;
-      webglCanvas.height = window.innerHeight;
-      gl.viewport(0, 0, webglCanvas.width, webglCanvas.height);
-      gl.uniform2f(loc.u_res, webglCanvas.width, webglCanvas.height);
-    });
 
-    // --- WebGL Render Loop ---
-    let waveActive = false;
-    let waveStartTime = 0;
-    let currentWave = 0.0;
-    let currentStrength = 0.0;
+    // ==========================================
+    // 2. SISTEMA THREE.JS (ANOMALÍA CENTRAL)
+    // ==========================================
+    const threeCanvas = document.getElementById('three-canvas');
+    let scene, camera, renderer, composer, clock;
+    let sphere, sphereMaterial;
+    let anomalyPulse = 0; // Controla la reacción al ping
 
-    const dormantCanvas = document.getElementById('dormant-canvas');
+    function initThreeJS() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 5.0;
+      clock = new THREE.Clock();
 
-    function renderWebGL(now) {
+      renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setClearColor(0x000000, 1); // Fondo negro (se fusionará con screen blending)
+
+      const renderScene = new RenderPass(scene, camera);
+      const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.35, 0.25, 0.92);
+      const outputPass = new OutputPass();
+
+      composer = new EffectComposer(renderer);
+      composer.addPass(renderScene);
+      composer.addPass(bloomPass);
+      composer.addPass(outputPass);
+
+      const geometry = new THREE.IcosahedronGeometry(0.28, 64);
+      sphereMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uPulse: { value: 0 }, // Sincronizado con el Ping
+          uColorGlow: { value: new THREE.Color(0x00ffff) },
+          uColorPeak: { value: new THREE.Color(0xff00cc) }
+        },
+        vertexShader: `
+          uniform float uTime; uniform float uPulse; varying vec3 vNormal; varying vec3 vPosition; varying float vNoise;
+          vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; } vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+          vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); } vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+          float snoise(vec3 v) { 
+            const vec2 C = vec2(1.0/6.0, 1.0/3.0); const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+            vec3 i  = floor(v + dot(v, C.yyy)); vec3 x0 = v - i + dot(i, C.xxx);
+            vec3 g = step(x0.yzx, x0.xyz); vec3 l = 1.0 - g; vec3 i1 = min(g.xyz, l.zxy); vec3 i2 = max(g.xyz, l.zxy);
+            vec3 x1 = x0 - i1 + C.xxx; vec3 x2 = x0 - i2 + C.yyy; vec3 x3 = x0 - D.yyy; i = mod289(i); 
+            vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+            float n_ = 0.142857142857; vec3 ns = n_ * D.wyz - D.xzx; vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+            vec4 x_ = floor(j * ns.z); vec4 y_ = floor(j - 7.0 * x_); vec4 x = x_ *ns.x + ns.yyyy; vec4 y = y_ *ns.x + ns.yyyy;
+            vec4 h = 1.0 - abs(x) - abs(y); vec4 b0 = vec4(x.xy, y.xy); vec4 b1 = vec4(x.zw, y.zw);
+            vec4 s0 = floor(b0)*2.0 + 1.0; vec4 s1 = floor(b1)*2.0 + 1.0; vec4 sh = -step(h, vec4(0.0));
+            vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy; vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+            vec3 p0 = vec3(a0.xy,h.x); vec3 p1 = vec3(a0.zw,h.y); vec3 p2 = vec3(a1.xy,h.z); vec3 p3 = vec3(a1.zw,h.w);
+            vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+            p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w; vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+            m = m * m; return 105.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+          }
+          void main() {
+            vNormal = normal; vPosition = position;
+            float lowFreq = snoise(position * 1.5 + uTime * 0.2);
+            float highFreq = snoise(position * 8.0 - uTime * 0.4) * 0.1;
+            vNoise = lowFreq + highFreq;
+            // Respiración base + Explosión de pulso
+            float displacement = vNoise * (0.3 + uPulse * 0.8);
+            vec3 newPos = position + normal * displacement;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColorGlow; uniform vec3 uColorPeak; uniform float uPulse;
+          varying vec3 vNormal; varying vec3 vPosition; varying float vNoise;
+          void main() {
+            vec3 viewDir = normalize(cameraPosition - vPosition);
+            float fresnel = pow(1.0 - dot(viewDir, vNormal), 3.0);
+            vec3 color = mix(uColorGlow, uColorPeak, smoothstep(-0.2, 0.5, vNoise));
+            
+            // Intensificar luz durante el pulso
+            color += uColorGlow * fresnel * (0.25 + uPulse * 0.8);
+
+            float alpha = mix(0.02, 0.38, fresnel);
+            gl_FragColor = vec4(color, alpha);
+          }
+        `,
+        transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+      });
+
+      sphere = new THREE.Mesh(geometry, sphereMaterial);
+      scene.add(sphere);
+    }
+    initThreeJS();
+
+
+    // ==========================================
+    // 3. RENDER LOOP UNIFICADO
+    // ==========================================
+    function renderAll(now) {
+      // -- WebGL Background --
       const t = now * 0.001;
       gl.uniform1f(loc.u_time, t);
 
       if (waveActive) {
         currentWave = Math.min(((now - waveStartTime) / 2000.0) * 1.6, 1.6);
         currentStrength = Math.exp(-Math.pow((currentWave - 0.35) / 0.2, 2.0));
+        bgBlend = 1.0;
         if (currentWave >= 1.6) {
-          waveActive = false;
-          currentWave = 0.0;
-          currentStrength = 0.0;
-          // Exit State 3 -> back to State 2
-          dormantCanvas.style.display = 'block';
+          waveActive = false; waveFading = true; waveFadeStart = now;
         }
+      } else if (waveFading) {
+        bgBlend = Math.max(0, 1.0 - (now - waveFadeStart) / 1000.0);
+        if (bgBlend <= 0) { waveFading = false; bgBlend = 0; currentWave = 0.0; currentStrength = 0.0; }
       }
-
-      gl.uniform1f(loc.u_wave, currentWave);
-      gl.uniform1f(loc.u_strength, currentStrength);
+      gl.uniform1f(loc.u_wave, currentWave); gl.uniform1f(loc.u_strength, currentStrength); gl.uniform1f(loc.u_bgBlend, bgBlend);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      requestAnimationFrame(renderWebGL);
-    }
-    requestAnimationFrame(renderWebGL);
 
-    // --- triggerWave ---
-    function triggerWave(ox, oy) {
-      gl.uniform2f(loc.u_origin, ox, oy);
-      waveStartTime = performance.now();
-      waveActive = true;
-      // Enter State 3: hide dormant canvas
-      dormantCanvas.style.display = 'none';
-      // Audio
-      playBeep();
-    }
+      // -- Three.js Anomaly --
+      if (clock) {
+        sphereMaterial.uniforms.uTime.value = clock.getElapsedTime();
 
-    // --- fBm for Canvas 2D (JS) ---
-    function hashF(x, y) { return ((Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1 + 1) % 1; }
-    function noiseF(x, y) {
-      const ix = Math.floor(x), iy = Math.floor(y);
-      const fx = x - ix, fy = y - iy;
-      const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
-      const a = hashF(ix, iy), b = hashF(ix+1, iy), c = hashF(ix, iy+1), d = hashF(ix+1, iy+1);
-      return a + (b-a)*sx + (c-a)*sy + (a-b-c+d)*sx*sy;
-    }
-    function fBmF(x, y, octaves) {
-      let val = 0, amp = 0.5;
-      for (let i = 0; i < octaves; i++) { val += amp * noiseF(x, y); x *= 2; y *= 2; amp *= 0.5; }
-      return val;
-    }
+        // Decaimiento del pulso
+        if (anomalyPulse > 0) { anomalyPulse -= 0.015; }
+        sphereMaterial.uniforms.uPulse.value = Math.max(0, anomalyPulse);
 
-    // --- Canvas 2D Dormant Animation ---
-    dormantCanvas.width = window.innerWidth;
-    dormantCanvas.height = window.innerHeight;
+        sphere.rotation.y += 0.002;
+        sphere.rotation.x += 0.001;
+        composer.render();
+      }
+      requestAnimationFrame(renderAll);
+    }
+    requestAnimationFrame(renderAll);
+
     window.addEventListener('resize', () => {
-      dormantCanvas.width = window.innerWidth;
-      dormantCanvas.height = window.innerHeight;
+      webglCanvas.width = window.innerWidth; webglCanvas.height = window.innerHeight;
+      gl.viewport(0, 0, webglCanvas.width, webglCanvas.height); gl.uniform2f(loc.u_res, webglCanvas.width, webglCanvas.height);
+      camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    const dctx = dormantCanvas.getContext('2d');
-    let halos = [];
-
-    function drawBlob(ctx, cx, cy, radius, color, xOffset, yOffset, t) {
-      ctx.beginPath();
-      for (let i = 0; i <= 64; i++) {
-        const angle = (i / 64) * Math.PI * 2;
-        const n = fBmF(Math.cos(angle) * 2 + t * 0.3, Math.sin(angle) * 2 + t * 0.3, 5);
-        const r = radius * (0.8 + 0.4 * n);
-        const x = cx + (xOffset || 0) + Math.cos(angle) * r;
-        const y = cy + (yOffset || 0) + Math.sin(angle) * r;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-    }
-
-    function drawDormant(ts) {
-      const t = ts * 0.001;
-      const W = dormantCanvas.width;
-      const H = dormantCanvas.height;
-      const cx = W / 2;
-      const cy = H / 2;
-      const baseR = 6 + 5 * (0.5 + 0.5 * Math.sin(t * 0.8));
-
-      dctx.clearRect(0, 0, W, H);
-
-      // Cold blue interior
-      const grad = dctx.createRadialGradient(cx, cy, 0, cx, cy, baseR * 2.5);
-      grad.addColorStop(0, 'rgba(5,15,60,0.10)');
-      grad.addColorStop(1, 'transparent');
-      dctx.fillStyle = grad;
-      dctx.fillRect(0, 0, W, H);
-
-      // Three organic blobs with screen blending
-      dctx.globalCompositeOperation = 'screen';
-      drawBlob(dctx, cx, cy, baseR * 1.00, '#ff003c', baseR * 0.35, 0, t);
-      drawBlob(dctx, cx, cy, baseR * 0.82, '#ffffff', 0, 0, t);
-      drawBlob(dctx, cx, cy, baseR * 0.65, '#00f0ff', -baseR * 0.28, 0, t);
-
-      // Perpendicular blobs
-      drawBlob(dctx, cx, cy, baseR * 0.5, '#ff00cc', 0, baseR * 0.3, t);
-      drawBlob(dctx, cx, cy, baseR * 0.5, '#00ffee', 0, -baseR * 0.3, t);
-
-      // White rim
-      dctx.globalCompositeOperation = 'source-over';
-      dctx.beginPath();
-      for (let i = 0; i <= 64; i++) {
-        const angle = (i / 64) * Math.PI * 2;
-        const n = fBmF(Math.cos(angle) * 2 + t * 0.3, Math.sin(angle) * 2 + t * 0.3, 5);
-        const r = baseR * 0.95 * (0.8 + 0.4 * n);
-        const x = cx + Math.cos(angle) * r;
-        const y = cy + Math.sin(angle) * r;
-        if (i === 0) dctx.moveTo(x, y); else dctx.lineTo(x, y);
-      }
-      dctx.closePath();
-      dctx.strokeStyle = 'rgba(255,255,255,0.6)';
-      dctx.lineWidth = 1;
-      dctx.filter = 'blur(1px)';
-      dctx.stroke();
-      dctx.filter = 'none';
-
-      // Expanding ring halos
-      for (let i = 0; i < halos.length; i++) {
-        const elapsed = t - halos[i].start;
-        let progress = elapsed / 3.0;
-        if (progress > 1) {
-          // Restart with staggered offset
-          halos[i].start = t - ((t - halos[i].start) % 3.0);
-          progress = ((t - halos[i].start)) / 3.0;
-        }
-        const scale = 1 + progress * 8;
-        const opacity = 0.7 * (1 - progress);
-        dctx.beginPath();
-        dctx.arc(cx, cy, baseR * scale, 0, Math.PI * 2);
-        dctx.strokeStyle = `rgba(255,255,255,${opacity})`;
-        dctx.lineWidth = 0.5;
-        dctx.stroke();
-      }
-    }
-
-    // --- Dormant loop start/stop ---
-    let dormantRafId = null;
-    function startDormantLoop() {
-      if (dormantRafId) return;
-      const now = performance.now() * 0.001;
-      halos = [{ start: now }, { start: now - 1 }, { start: now - 2 }];
-      function loop(ts) {
-        drawDormant(ts);
-        dormantRafId = requestAnimationFrame(loop);
-      }
-      dormantRafId = requestAnimationFrame(loop);
-    }
-    function stopDormantLoop() {
-      if (dormantRafId) { cancelAnimationFrame(dormantRafId); dormantRafId = null; }
-    }
-
-    // --- Audio (Web Audio API, lazy init) ---
+    // ==========================================
+    // 4. LÓGICA DE SOCKETS Y AUDIO
+    // ==========================================
     let audioCtx = null;
     function playBeep() {
       try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(audioCtx.currentTime);
-        osc.stop(audioCtx.currentTime + 0.08);
-      } catch (e) { /* fail silently */ }
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.08);
+      } catch (e) { }
     }
 
-    // --- Socket.io Setup and State Machine ---
-    const socket = io({ transports: ['websocket'] });
-    let currentRoomId = null;
+    const socket = window.io({ transports: ['websocket'] }); // window.io funciona perfecto aquí
     let chromaFlashTimeout = null;
 
     socket.on('connect', () => { socket.emit('totem:ready'); });
 
-    // State 1: server:init handler
     socket.on('server:init', ({ roomId, phoneUrl }) => {
-      currentRoomId = roomId;
       QRCode.toCanvas(document.getElementById('qr-canvas'), phoneUrl, { width: 200, margin: 2 });
       document.getElementById('room-id').textContent = roomId;
       document.getElementById('phone-url').textContent = phoneUrl;
-      document.getElementById('corner-bl').textContent = 'ROOM \u00B7 ' + roomId;
+      document.getElementById('corner-bl').textContent = 'ROOM · ' + roomId;
     });
 
-    // State 1 -> State 2: phone connected
     socket.on('totem:phone-connected', () => {
       document.getElementById('qr-screen').style.display = 'none';
-      dormantCanvas.style.display = 'block';
-      startDormantLoop();
+      threeCanvas.style.opacity = '1'; // Revelamos la anomalía
       const dot = document.querySelector('#corner-br .dot');
       dot.classList.add('active');
       document.querySelector('#corner-br .label').textContent = 'CONNECTED';
     });
 
-    // State 2 -> State 1: phone disconnected
     socket.on('phone:disconnected', () => {
       document.getElementById('qr-screen').style.display = 'flex';
-      dormantCanvas.style.display = 'none';
-      stopDormantLoop();
+      threeCanvas.style.opacity = '0'; // Ocultamos la anomalía
       const dot = document.querySelector('#corner-br .dot');
       dot.classList.remove('active');
       document.querySelector('#corner-br .label').textContent = 'WAITING';
-      // Also reset any active wave
-      waveActive = false;
-      currentWave = 0.0;
-      currentStrength = 0.0;
+      waveActive = false; waveFading = false; bgBlend = 0.0; currentWave = 0.0; currentStrength = 0.0; gl.uniform1f(loc.u_bgBlend, 0.0);
     });
 
-    // State 2 -> State 3: ping received
     socket.on('server:ping', () => {
-      triggerWave(0.5, 0.5);
+      // 1. Detonamos la onda de fondo (Raw WebGL)
+      gl.uniform2f(loc.u_origin, 0.5, 0.5);
+      waveStartTime = performance.now();
+      waveActive = true; waveFading = false;
+
+      // 2. Detonamos la reacción de la anomalía 3D
+      anomalyPulse = 1.0;
+
+      playBeep();
     });
 
-    // Latency display with chromatic flash
     socket.on('server:latency', ({ latencyMs }) => {
       const el = document.getElementById('latency-display');
-      el.textContent = latencyMs;
-      // Restart flash if already active
+      el.innerHTML = latencyMs + '<span style="font-size:2rem;opacity:0.45;margin-left:0.2em;letter-spacing:0.05em">ms</span>';
       if (chromaFlashTimeout) { clearTimeout(chromaFlashTimeout); el.classList.remove('chroma-flash'); }
-      // Force reflow to restart animation
-      void el.offsetWidth;
-      el.classList.add('chroma-flash');
+      void el.offsetWidth; el.classList.add('chroma-flash');
       chromaFlashTimeout = setTimeout(() => { el.classList.remove('chroma-flash'); chromaFlashTimeout = null; }, 500);
     });
   </script>
 </body>
+
 </html>

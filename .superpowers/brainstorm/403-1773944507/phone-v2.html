@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Phone v2 — Chromatic</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:#060606;
+    font-family:'Courier New', monospace;
+    color:#fff;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:28px 20px 48px;
+    gap:0;
+  }
+  h1 { font-size:10px; letter-spacing:0.3em; color:#2a2a2a; margin-bottom:6px; }
+  .sub { font-size:9px; color:#181818; letter-spacing:0.12em; margin-bottom:30px; }
+
+  .row { display:flex; gap:20px; justify-content:center; flex-wrap:wrap; align-items:flex-start; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .lbl { font-size:8px; color:#252525; letter-spacing:0.2em; text-transform:uppercase; }
+  .note { font-size:8px; color:#1e1e1e; text-align:center; max-width:170px; line-height:1.8; }
+  .hint { font-size:8px; color:#1c1c1c; letter-spacing:0.15em; animation:blink 3s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:0.3} 50%{opacity:0.9} }
+
+  /* ── Phone frame ── */
+  .phone {
+    width:195px; height:370px;
+    border-radius:20px;
+    border:1px solid #0d0d0d;
+    position:relative;
+    overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* Same fine grid as totem */
+  .grid-bg {
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,0.022) 1px, transparent 1px);
+    background-size:16px 16px;
+    z-index:0;
+  }
+
+  /* ── OPTION A: chromatic atmosphere behind button ── */
+  .atmo-a {
+    position:absolute; inset:0; z-index:1;
+    background:
+      radial-gradient(ellipse 70% 40% at 50% 50%, rgba(5,12,55,0.55) 0%, transparent 70%);
+  }
+  /* Subtle R/B halos at button edges */
+  .atmo-a::before {
+    content:'';
+    position:absolute;
+    left:calc(10% - 18px); top:50%; transform:translateY(-50%);
+    width:36px; height:110px;
+    border-radius:50%;
+    background:rgba(255,0,60,0.07);
+    filter:blur(14px);
+  }
+  .atmo-a::after {
+    content:'';
+    position:absolute;
+    right:calc(10% - 18px); top:50%; transform:translateY(-50%);
+    width:36px; height:110px;
+    border-radius:50%;
+    background:rgba(0,240,255,0.07);
+    filter:blur(14px);
+  }
+
+  /* ── OPTION B: vertical chromatic gradient bg ── */
+  .atmo-b {
+    position:absolute; inset:0; z-index:1;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 50%, rgba(5,12,55,0.4) 0%, transparent 65%),
+      linear-gradient(160deg, rgba(255,0,60,0.04) 0%, transparent 40%, transparent 60%, rgba(0,240,255,0.04) 100%);
+  }
+
+  /* ── OPTION C: chromatic glow on button itself ── */
+  .atmo-c {
+    position:absolute; inset:0; z-index:1;
+    background:radial-gradient(ellipse 80% 50% at 50% 50%, rgba(5,12,55,0.35) 0%, transparent 70%);
+  }
+
+  /* ── Glassmorphism button ── */
+  .btn-wrap { position:relative; z-index:2; width:80%; display:flex; flex-direction:column; align-items:center; gap:13px; }
+
+  .glass-btn {
+    position:relative; width:100%; height:110px; border-radius:22px;
+    background:rgba(255,255,255,0.04);
+    box-shadow:0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.06);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; overflow:hidden;
+    transition:transform 80ms ease, background 80ms ease;
+    user-select:none;
+  }
+  /* Option A: neutral border with R/B split shadow */
+  .btn-a {
+    border:1px solid rgba(255,255,255,0.07);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.03),
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      -8px 0 20px rgba(255,0,60,0.06),
+      8px 0 20px rgba(0,240,255,0.06);
+  }
+  /* Option B: diagonal chromatic border */
+  .btn-b {
+    border:1px solid transparent;
+    background-clip:padding-box;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.03),
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      0 0 28px rgba(0,240,255,0.08),
+      0 0 14px rgba(255,0,60,0.06);
+  }
+  .btn-b::before {
+    content:'';
+    position:absolute; inset:-1px;
+    border-radius:23px;
+    background:linear-gradient(135deg, rgba(255,0,60,0.25), transparent 40%, transparent 60%, rgba(0,240,255,0.25));
+    z-index:0;
+    pointer-events:none;
+  }
+  /* Option C: pulsing chromatic border via animation */
+  .btn-c {
+    border:1px solid rgba(255,255,255,0.05);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.02),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    animation:chroma-pulse 3s ease-in-out infinite;
+  }
+  @keyframes chroma-pulse {
+    0%,100% {
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.02), inset 0 1px 0 rgba(255,255,255,0.05),
+                  -6px 0 16px rgba(255,0,60,0.05), 6px 0 16px rgba(0,240,255,0.05);
+    }
+    50% {
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.08),
+                  -10px 0 24px rgba(255,0,60,0.12), 10px 0 24px rgba(0,240,255,0.12);
+    }
+  }
+
+  .btn-label {
+    font-size:12px; letter-spacing:0.2em;
+    color:rgba(255,255,255,0.65);
+    font-family:'Courier New',monospace;
+    position:relative; z-index:2; pointer-events:none;
+  }
+
+  /* Ripple */
+  .ripple {
+    position:absolute; border-radius:50%;
+    background:rgba(255,255,255,0.1);
+    transform:scale(0); pointer-events:none; z-index:1;
+  }
+  .ripple.go { animation:rip 400ms ease-out forwards; }
+  @keyframes rip { to { transform:scale(4.5); opacity:0; } }
+
+  /* Room label */
+  .room-lbl { font-size:8px; color:#1a1a1a; letter-spacing:0.2em; }
+
+  /* Connected indicator */
+  .conn-dot {
+    position:absolute; bottom:11px; right:11px;
+    display:flex; align-items:center; gap:4px;
+    font-size:7px; color:#2a2a2a; letter-spacing:0.1em; z-index:3;
+  }
+  .cdot { width:4px; height:4px; border-radius:50%; background:#00ff87; box-shadow:0 0 5px #00ff87; animation:dpulse 2s ease-in-out infinite; }
+  @keyframes dpulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  .sep { width:1px; height:280px; background:#0d0d0d; margin-top:30px; }
+</style>
+</head>
+<body>
+
+<h1>PHONE — 3 OPCIONES DE DIÁLOGO CON EL TOTEM</h1>
+<div class="sub">Mismo grid, mismo vocabulario cromático. Tocá cada botón.</div>
+
+<div class="row">
+
+  <!-- OPTION A: R/B halos flanking button -->
+  <div class="col">
+    <div class="lbl">A · Halos R/B laterales</div>
+    <div class="phone">
+      <div class="grid-bg"></div>
+      <div class="atmo-a"></div>
+      <div class="btn-wrap">
+        <div class="glass-btn btn-a" id="btn-a">
+          <div class="btn-label" id="lbl-a">SEND PING</div>
+          <div class="ripple" id="rip-a"></div>
+        </div>
+        <div class="room-lbl">ROOM · A3F7</div>
+      </div>
+      <div class="conn-dot"><div class="cdot"></div>CONNECTED</div>
+    </div>
+    <div class="note">Aura roja izquierda, cian derecha. Mismo split asimétrico del shader.</div>
+  </div>
+
+  <!-- OPTION B: diagonal chromatic border -->
+  <div class="col">
+    <div class="lbl">B · Borde cromático diagonal</div>
+    <div class="phone">
+      <div class="grid-bg"></div>
+      <div class="atmo-b"></div>
+      <div class="btn-wrap">
+        <div class="glass-btn btn-b" id="btn-b">
+          <div class="btn-label" id="lbl-b">SEND PING</div>
+          <div class="ripple" id="rip-b"></div>
+        </div>
+        <div class="room-lbl">ROOM · A3F7</div>
+      </div>
+      <div class="conn-dot"><div class="cdot"></div>CONNECTED</div>
+    </div>
+    <div class="note">Borde con gradiente R→B en diagonal. Glow exterior tenue.</div>
+  </div>
+
+  <!-- OPTION C: pulsing chromatic border synced with totem wave -->
+  <div class="col">
+    <div class="lbl">C · Pulso cromático animado</div>
+    <div class="phone">
+      <div class="grid-bg"></div>
+      <div class="atmo-c"></div>
+      <div class="btn-wrap">
+        <div class="glass-btn btn-c" id="btn-c">
+          <div class="btn-label" id="lbl-c">SEND PING</div>
+          <div class="ripple" id="rip-c"></div>
+        </div>
+        <div class="room-lbl">ROOM · A3F7</div>
+      </div>
+      <div class="conn-dot"><div class="cdot"></div>CONNECTED</div>
+    </div>
+    <div class="note">Halos R/B respiran lentamente — como la onda dormida del totem.</div>
+  </div>
+
+</div>
+
+<script>
+function setupBtn(btnId, lblId, ripId) {
+  const btn = document.getElementById(btnId);
+  const lbl = document.getElementById(lblId);
+  const rip = document.getElementById(ripId);
+  let locked = false;
+
+  btn.addEventListener('click', function(e) {
+    if (locked) return;
+    locked = true;
+
+    const rect = btn.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const sz = Math.max(rect.width, rect.height);
+
+    // Step 1 — impact
+    btn.style.transform = 'scale(0.96)';
+    btn.style.background = 'rgba(255,255,255,0.10)';
+    setTimeout(() => {
+      btn.style.transform = '';
+      btn.style.background = '';
+    }, 80);
+
+    // Step 2 — ripple
+    rip.style.width  = sz + 'px';
+    rip.style.height = sz + 'px';
+    rip.style.left   = (x - sz/2) + 'px';
+    rip.style.top    = (y - sz/2) + 'px';
+    rip.classList.remove('go');
+    void rip.offsetWidth;
+    rip.classList.add('go');
+
+    // Step 3 — chromatic ghost
+    setTimeout(() => {
+      lbl.style.textShadow = '2px 0 rgba(255,0,60,0.85), -2px 0 rgba(0,240,255,0.85)';
+      lbl.style.color = 'rgba(255,255,255,0.95)';
+      setTimeout(() => {
+        lbl.style.textShadow = '';
+        lbl.style.color = '';
+      }, 300);
+    }, 60);
+
+    setTimeout(() => {
+      locked = false;
+      rip.classList.remove('go');
+    }, 750);
+  });
+}
+
+setupBtn('btn-a','lbl-a','rip-a');
+setupBtn('btn-b','lbl-b','rip-b');
+setupBtn('btn-c','lbl-c','rip-c');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Totem — Dormant Wave Preview</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background:#080808;
+    font-family: 'Courier New', monospace;
+    color:#fff;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:28px 20px 40px;
+  }
+
+  h1 {
+    font-size:10px;
+    letter-spacing:0.3em;
+    color:#2a2a2a;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .sub {
+    font-size:9px;
+    color:#1e1e1e;
+    letter-spacing:0.15em;
+    margin-bottom:32px;
+  }
+
+  .stages {
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+
+  .stage {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+  }
+
+  .stage-label {
+    font-size:8px;
+    color:#2a2a2a;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+  }
+
+  /* ── TOTEM FRAME ── */
+  .totem {
+    width:200px;
+    height:360px;
+    position:relative;
+    background:#020202;
+    border:1px solid #0f0f0f;
+    border-radius:4px;
+    overflow:hidden;
+  }
+
+  /* Fine grid background */
+  .totem::before {
+    content:'';
+    position:absolute;
+    inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,0.022) 1px, transparent 1px);
+    background-size:16px 16px;
+    z-index:0;
+  }
+
+  /* ── STATE 1: QR ── */
+  .state-qr {
+    position:absolute;
+    inset:0;
+    z-index:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+  }
+
+  .qr-box {
+    width:96px; height:96px;
+    background:#fff;
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .qr-pattern {
+    width:80px; height:80px;
+    background:
+      /* Corner squares */
+      linear-gradient(#000,#000) 0 0 / 20px 20px no-repeat,
+      linear-gradient(#000,#000) 60px 0 / 20px 20px no-repeat,
+      linear-gradient(#000,#000) 0 60px / 20px 20px no-repeat,
+      /* Inner corner squares */
+      linear-gradient(#000,#000) 4px 4px / 12px 12px no-repeat,
+      linear-gradient(#fff,#fff) 4px 4px / 12px 12px no-repeat,
+      linear-gradient(#000,#000) 64px 4px / 12px 12px no-repeat,
+      linear-gradient(#fff,#fff) 64px 4px / 12px 12px no-repeat,
+      linear-gradient(#000,#000) 4px 64px / 12px 12px no-repeat,
+      linear-gradient(#fff,#fff) 4px 64px / 12px 12px no-repeat,
+      /* Data dots */
+      repeating-linear-gradient(0deg,#000 0,#000 4px,transparent 4px,transparent 8px),
+      repeating-linear-gradient(90deg,#000 0,#000 4px,transparent 4px,transparent 8px);
+  }
+
+  /* simpler QR representation */
+  .qr-grid {
+    width:76px; height:76px;
+    display:grid;
+    grid-template-columns:repeat(10,1fr);
+    grid-template-rows:repeat(10,1fr);
+    gap:1px;
+  }
+  .qr-cell { background:#000; border-radius:0.5px; }
+  .qr-cell.w { background:#fff; }
+
+  .qr-room {
+    font-size:9px;
+    letter-spacing:0.35em;
+    color:#2a2a2a;
+  }
+
+  /* ── STATE 2: DORMANT WAVE ── */
+  .canvas-wrap {
+    position:absolute;
+    inset:0;
+    z-index:1;
+  }
+
+  canvas.wave-canvas {
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+  }
+
+  /* Overlay UI — both states */
+  .overlay {
+    position:absolute;
+    inset:0;
+    z-index:10;
+    pointer-events:none;
+  }
+
+  .corner-bl {
+    position:absolute;
+    bottom:10px; left:10px;
+    font-size:7px;
+    color:#1a1a1a;
+    letter-spacing:0.12em;
+  }
+  .corner-br {
+    position:absolute;
+    bottom:10px; right:10px;
+    font-size:7px;
+    color:#222;
+    letter-spacing:0.08em;
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .status-dot {
+    width:4px; height:4px;
+    border-radius:50%;
+  }
+
+  /* Latency display — center */
+  .lat-display {
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    pointer-events:none;
+  }
+  .lat-val {
+    font-size:52px;
+    font-weight:700;
+    color:#fff;
+    line-height:1;
+    letter-spacing:-0.02em;
+    font-family:'Courier New',monospace;
+  }
+  .lat-unit {
+    font-size:8px;
+    color:rgba(255,255,255,0.18);
+    letter-spacing:0.25em;
+    margin-top:4px;
+  }
+
+  /* Arrow between stages */
+  .arrow {
+    font-size:10px;
+    color:#1e1e1e;
+    margin-top:150px;
+    letter-spacing:0.1em;
+  }
+
+  .note {
+    font-size:8px;
+    color:#1e1e1e;
+    letter-spacing:0.1em;
+    text-align:center;
+    max-width:180px;
+    line-height:1.8;
+  }
+
+  /* Click hint */
+  .click-hint {
+    font-size:8px;
+    color:#1e1e1e;
+    letter-spacing:0.15em;
+    text-align:center;
+    margin-top:4px;
+    animation:blink-hint 3s ease-in-out infinite;
+  }
+  @keyframes blink-hint { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+</style>
+</head>
+<body>
+
+<h1>Totem — Consistencia Visual</h1>
+<div class="sub">El efecto de espera usa la misma identidad que la onda WebGL</div>
+
+<div class="stages">
+
+  <!-- STAGE 1: QR (before phone) -->
+  <div class="stage">
+    <div class="stage-label">1 · Sin teléfono</div>
+    <div class="totem" id="totem-qr">
+      <div class="state-qr">
+        <div class="qr-box">
+          <canvas id="qr-canvas-mock" width="76" height="76"></canvas>
+        </div>
+        <div class="qr-room">A3F7</div>
+      </div>
+      <div class="overlay">
+        <div class="corner-bl">ROOM · A3F7</div>
+        <div class="corner-br">
+          <div class="status-dot" style="background:#1a1a1a;"></div>
+          WAITING
+        </div>
+      </div>
+    </div>
+    <div class="note">Igual que ahora — solo el QR y el código de sala</div>
+  </div>
+
+  <div class="arrow">──▶</div>
+
+  <!-- STAGE 2: Dormant wave (phone connected, no ping yet) -->
+  <div class="stage">
+    <div class="stage-label">2 · Teléfono conectado</div>
+    <div class="totem" id="totem-dormant">
+      <div class="canvas-wrap">
+        <canvas id="dormant-canvas" width="200" height="360"></canvas>
+      </div>
+      <div class="overlay">
+        <div class="lat-display">
+          <div class="lat-val" id="lat-val" style="opacity:0;">—</div>
+          <div class="lat-unit">ms</div>
+        </div>
+        <div class="corner-bl">ROOM · A3F7</div>
+        <div class="corner-br">
+          <div class="status-dot" id="connected-dot" style="background:#00ff87; box-shadow:0 0 5px #00ff87;"></div>
+          CONNECTED
+        </div>
+      </div>
+    </div>
+    <div class="click-hint">[ clic para simular ping ]</div>
+    <div class="note">La onda "duerme" en el centro — misma identidad cromática</div>
+  </div>
+
+  <div class="arrow">──▶</div>
+
+  <!-- STAGE 3: Active wave (after ping) -->
+  <div class="stage">
+    <div class="stage-label">3 · Después del ping</div>
+    <div class="totem" id="totem-active">
+      <div class="canvas-wrap">
+        <canvas id="active-canvas" width="200" height="360"></canvas>
+      </div>
+      <div class="overlay">
+        <div class="lat-display">
+          <div class="lat-val" id="lat-active">42</div>
+          <div class="lat-unit">ms</div>
+        </div>
+        <div class="corner-bl">ROOM · A3F7</div>
+        <div class="corner-br">
+          <div class="status-dot" style="background:#00ff87;box-shadow:0 0 5px #00ff87;"></div>
+          CONNECTED
+        </div>
+      </div>
+    </div>
+    <div class="note">La onda WebGL explota desde el mismo punto central</div>
+  </div>
+
+</div>
+
+<script>
+// ── QR mock ──
+(function drawQR() {
+  const c = document.getElementById('qr-canvas-mock');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const size = 76;
+  const cell = 5;
+  const cols = Math.floor(size / cell);
+
+  // deterministic pseudo-QR
+  const seed = [
+    1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,
+    1,0,0,0,0,0,1,0,0,1,0,1,1,0,1,
+    1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,1,1,0,1,0,0,1,1,0,0,0,1,
+    1,0,1,1,1,0,1,0,1,1,0,1,0,1,1,
+    1,0,0,0,0,0,1,0,1,0,1,0,1,1,0,
+    1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,
+    0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,
+    1,1,0,1,1,0,1,1,1,0,1,0,1,0,1,
+    0,1,0,0,1,1,0,1,0,1,0,0,0,1,0,
+    1,0,1,1,0,0,1,0,1,0,1,0,0,0,1,
+    0,1,0,1,0,1,0,1,0,0,1,1,0,1,0,
+    1,1,1,1,1,0,1,0,1,0,0,0,1,0,1,
+    1,0,0,0,1,0,1,1,0,1,0,1,0,1,0,
+    1,1,1,0,1,0,1,0,1,0,1,0,1,0,1
+  ];
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#000';
+  for (let i = 0; i < seed.length; i++) {
+    if (seed[i]) {
+      const r = Math.floor(i / 15);
+      const cc = i % 15;
+      ctx.fillRect(cc * 5 + 1, r * 5 + 1, 4, 4);
+    }
+  }
+})();
+
+// ── Noise helpers ──
+function hash(n) {
+  n = Math.sin(n) * 43758.5453123;
+  return n - Math.floor(n);
+}
+function noise(x, y) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = x - ix, fy = y - iy;
+  const ux = fx * fx * (3 - 2 * fx);
+  const uy = fy * fy * (3 - 2 * fy);
+  const a = hash(ix + iy * 57);
+  const b = hash(ix + 1 + iy * 57);
+  const c = hash(ix + (iy + 1) * 57);
+  const d = hash(ix + 1 + (iy + 1) * 57);
+  return a + (b - a) * ux + (c - a) * uy + (d - b + a - c) * ux * uy;
+}
+function fbm(x, y, octaves) {
+  let v = 0, a = 0.5;
+  for (let i = 0; i < octaves; i++) {
+    v += a * noise(x, y);
+    x *= 2.1; y *= 2.3; a *= 0.5;
+  }
+  return v;
+}
+
+// ── Dormant wave canvas ──
+const dormantCanvas = document.getElementById('dormant-canvas');
+const dormantCtx = dormantCanvas.getContext('2d');
+const W = 200, H = 360;
+const cx = W / 2, cy = H / 2;
+
+let time = 0;
+let pingTriggered = false;
+let pingTime = 0;
+
+function drawGrid(ctx, alpha) {
+  ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+  ctx.lineWidth = 0.5;
+  const step = 16;
+  for (let x = 0; x < W; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+}
+
+// Draw an organic blob for one channel using noise-perturbed radius
+function drawOrganicBlob(ctx, x, y, baseR, time, offsetX, color, alpha) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  ctx.globalAlpha = alpha;
+
+  const steps = 80;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * Math.PI * 2;
+    const nx = Math.cos(angle) * 2.5;
+    const ny = Math.sin(angle) * 2.5;
+    const n = fbm(nx + time * 0.12, ny + time * 0.09, 4);
+    const r = baseR * (1 + (n - 0.5) * 0.7);
+    const px = x + offsetX + Math.cos(angle) * r;
+    const py = y + Math.sin(angle) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+
+  // Radial gradient for soft blob
+  const grad = ctx.createRadialGradient(x + offsetX, y, 0, x + offsetX, y, baseR * 1.5);
+  grad.addColorStop(0, color);
+  grad.addColorStop(0.6, color);
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.filter = `blur(${baseR * 0.5}px)`;
+  ctx.fill();
+  ctx.filter = 'none';
+  ctx.restore();
+}
+
+// Rim of refraction — white edge
+function drawRim(ctx, x, y, baseR, time, alpha) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  ctx.globalAlpha = alpha;
+
+  const steps = 80;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * Math.PI * 2;
+    const nx = Math.cos(angle) * 2.5;
+    const ny = Math.sin(angle) * 2.5;
+    const n = fbm(nx + time * 0.12, ny + time * 0.09, 4);
+    const r = baseR * (1 + (n - 0.5) * 0.7);
+    const px = x + Math.cos(angle) * r;
+    const py = y + Math.sin(angle) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+  ctx.lineWidth = 0.8;
+  ctx.filter = `blur(1px)`;
+  ctx.stroke();
+  ctx.filter = 'none';
+  ctx.restore();
+}
+
+function animateDormant() {
+  time += 0.008;
+
+  dormantCtx.clearRect(0, 0, W, H);
+  dormantCtx.fillStyle = '#020202';
+  dormantCtx.fillRect(0, 0, W, H);
+
+  drawGrid(dormantCtx, 0.022);
+
+  // Breathing: slow radius oscillation
+  const breathe = 0.5 + 0.5 * Math.sin(time * 0.8);
+  const baseR = 6 + breathe * 5; // 6 to 11px — tiny, dormant
+
+  // Subtle cold blue interior (bgB preview)
+  dormantCtx.save();
+  dormantCtx.globalAlpha = 0.08 + breathe * 0.04;
+  const interiorGrad = dormantCtx.createRadialGradient(cx, cy, 0, cx, cy, baseR * 2.5);
+  interiorGrad.addColorStop(0, 'rgba(10,30,90,1)');
+  interiorGrad.addColorStop(1, 'transparent');
+  dormantCtx.fillStyle = interiorGrad;
+  dormantCtx.beginPath();
+  dormantCtx.arc(cx, cy, baseR * 2.5, 0, Math.PI * 2);
+  dormantCtx.fill();
+  dormantCtx.restore();
+
+  // Chromatic aberration layers — R right, B left, G center
+  // Same asymmetric scaling as shader: R=1.0, G=0.82, B=0.65
+  const sepX = baseR * 0.35;
+  drawOrganicBlob(dormantCtx, cx, cy, baseR * 1.00, time,  sepX * 1.0, '#ff003c', 0.55);
+  drawOrganicBlob(dormantCtx, cx, cy, baseR * 0.82, time,  0,          '#ffffff', 0.4);
+  drawOrganicBlob(dormantCtx, cx, cy, baseR * 0.65, time, -sepX * 0.8, '#00f0ff', 0.5);
+
+  // Perpendicular split (magenta/cyan flare) — subtle on Y axis
+  drawOrganicBlob(dormantCtx, cx, cy, baseR * 0.5, time + 1.0, 0, '#ff00cc', 0.25);
+  drawOrganicBlob(dormantCtx, cx, cy, baseR * 0.5, time + 2.0, 0, '#00ffee', 0.25);
+
+  // White rim
+  drawRim(dormantCtx, cx, cy, baseR * 0.95, time, 0.4 + breathe * 0.3);
+
+  requestAnimationFrame(animateDormant);
+}
+
+animateDormant();
+
+// ── Active wave (expanded) — simulates a frame mid-wave ──
+const activeCanvas = document.getElementById('active-canvas');
+const activeCtx = activeCanvas.getContext('2d');
+let activeTime = 0;
+let waveR = 0;
+let waveActive = true;
+let waveStrength = 0;
+let activeBase = 0;
+
+function animateActive() {
+  activeTime += 0.012;
+  activeBase += 0.008;
+
+  if (waveActive) {
+    waveR += 0.022;
+    if (waveR > 1.6) { waveR = 0; }
+    // Gaussian strength: peak at r≈0.35
+    const gauss = Math.exp(-Math.pow((waveR - 0.35) / 0.2, 2));
+    waveStrength = gauss;
+  }
+
+  const maxDim = Math.sqrt(W * W + H * H) / 2;
+
+  activeCtx.clearRect(0, 0, W, H);
+  activeCtx.fillStyle = '#020202';
+  activeCtx.fillRect(0, 0, W, H);
+
+  drawGrid(activeCtx, 0.022);
+
+  // Interior cold gradient (bgB)
+  const waveRpx = waveR * maxDim;
+  if (waveR > 0.05) {
+    activeCtx.save();
+    const interiorGrad = activeCtx.createRadialGradient(cx, cy, 0, cx, cy, waveRpx * 0.9);
+    interiorGrad.addColorStop(0, `rgba(5,15,60,${0.4 * waveStrength})`);
+    interiorGrad.addColorStop(1, 'transparent');
+    activeCtx.globalAlpha = 1;
+    activeCtx.fillStyle = interiorGrad;
+    activeCtx.beginPath();
+    activeCtx.arc(cx, cy, waveRpx * 0.9, 0, Math.PI * 2);
+    activeCtx.fill();
+    activeCtx.restore();
+  }
+
+  // Wave front bands — R, G, B
+  const bandW = 0.11 * maxDim;
+  const sepScale = bandW * waveStrength;
+
+  if (waveR > 0 && waveStrength > 0.01) {
+    // Draw three channel rings
+    [
+      { r: waveRpx * 1.00, color: '#ff003c', alpha: 0.7 * waveStrength },
+      { r: waveRpx * 0.92, color: '#ffffff', alpha: 0.5 * waveStrength },
+      { r: waveRpx * 0.82, color: '#00f0ff', alpha: 0.65 * waveStrength },
+    ].forEach(({ r, color, alpha }) => {
+      const steps = 120;
+      activeCtx.save();
+      activeCtx.globalCompositeOperation = 'screen';
+      activeCtx.globalAlpha = alpha;
+      activeCtx.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const angle = (i / steps) * Math.PI * 2;
+        const nx = Math.cos(angle) * 3;
+        const ny = Math.sin(angle) * 3;
+        const n = fbm(nx + activeTime * 0.15, ny + activeTime * 0.1, 5);
+        const noiseR = r * (1 + (n - 0.5) * 0.18 * waveStrength);
+        const px = cx + Math.cos(angle) * noiseR;
+        const py = cy + Math.sin(angle) * noiseR;
+        if (i === 0) activeCtx.moveTo(px, py);
+        else activeCtx.lineTo(px, py);
+      }
+      activeCtx.strokeStyle = color;
+      activeCtx.lineWidth = bandW * 0.5;
+      activeCtx.filter = `blur(${bandW * 0.4}px)`;
+      activeCtx.stroke();
+      activeCtx.filter = 'none';
+      activeCtx.restore();
+    });
+
+    // Rim — white inner edge
+    activeCtx.save();
+    activeCtx.globalAlpha = 0.9 * waveStrength;
+    activeCtx.beginPath();
+    const steps2 = 120;
+    for (let i = 0; i <= steps2; i++) {
+      const angle = (i / steps2) * Math.PI * 2;
+      const nx = Math.cos(angle) * 3;
+      const ny = Math.sin(angle) * 3;
+      const n = fbm(nx + activeTime * 0.15, ny + activeTime * 0.1, 5);
+      const r = (waveRpx * 0.85) * (1 + (n - 0.5) * 0.18 * waveStrength);
+      const px = cx + Math.cos(angle) * r;
+      const py = cy + Math.sin(angle) * r;
+      if (i === 0) activeCtx.moveTo(px, py);
+      else activeCtx.lineTo(px, py);
+    }
+    activeCtx.strokeStyle = 'rgba(255,255,255,0.95)';
+    activeCtx.lineWidth = 1.5;
+    activeCtx.filter = 'blur(1px)';
+    activeCtx.stroke();
+    activeCtx.filter = 'none';
+    activeCtx.restore();
+  }
+
+  // Residual dormant at center (always present)
+  const breathe = 0.5 + 0.5 * Math.sin(activeBase * 0.8);
+  const smallR = 4 + breathe * 3;
+  if (waveR < 0.1 || waveR > 1.0) {
+    drawOrganicBlob(activeCtx, cx, cy, smallR, activeBase, smallR * 0.35, '#ff003c', 0.4);
+    drawOrganicBlob(activeCtx, cx, cy, smallR * 0.82, activeBase, 0, '#ffffff', 0.3);
+    drawOrganicBlob(activeCtx, cx, cy, smallR * 0.65, activeBase, -smallR * 0.28, '#00f0ff', 0.4);
+  }
+
+  requestAnimationFrame(animateActive);
+}
+
+animateActive();
+
+// ── Click on dormant to simulate ping ──
+document.getElementById('totem-dormant').addEventListener('click', () => {
+  // Brief chromatic flash on the latency text
+  const latEl = document.getElementById('lat-val');
+  latEl.style.opacity = '1';
+  latEl.textContent = Math.floor(Math.random() * 40 + 20);
+  latEl.style.textShadow = '2px 0 #ff003c, -2px 0 #00f0ff';
+  setTimeout(() => { latEl.style.textShadow = 'none'; }, 500);
+});
+</script>
+
+</body>
+</html>

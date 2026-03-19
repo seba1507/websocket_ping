@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Paused at 04-02-PLAN.md checkpoint:human-verify (Task 3)
-last_updated: "2026-03-19T19:14:25.155Z"
+stopped_at: Phase 04 complete — post-checkpoint iterative UI tuning done
+last_updated: "2026-03-19"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -61,10 +61,13 @@ Recent decisions affecting current work:
 - [Project Init]: Eliminated complex animations in favor of flat color flashes to isolate network latency vs GPU latency.
 - [Phase 02-real-time-interaction]: Phone calculates RTT as Date.now() difference; server:pong sent only to phone socket; server:ping broadcast to Totem
 - [Phase 02-real-time-interaction]: phone:latency emitted after pong received with {roomId, latencyMs} for Totem forwarding; CSS transition removed from #ping-btn for instant state swaps
-- [Phase 04-ui-redesign]: WebGL single-program dual-mode: u_wave=0 for idle (no shader swap), wave code short-circuits naturally
-- [Phase 04-ui-redesign]: Self-contained HTML files: all socket logic, WebGL, and Canvas 2D inlined; totem.js removed
-- [Phase 04-ui-redesign P02]: Phone glassmorphism button uses opacity:0.3 + pointer-events:none for in-flight state; re-enabled on server:pong
-- [Phase 04-ui-redesign P02]: Press sequence is 3-step at specific offsets: impact flash 0ms, ripple 0ms, chromatic ghost text-shadow 60ms
+- [Phase 04-ui-redesign]: Two-canvas totem: raw WebGL (z-index:0) for chromatic wave bg, Three.js (z-index:1, mix-blend-mode:screen) for icosahedron anomaly with UnrealBloom
+- [Phase 04-ui-redesign]: importmap required in totem.html — Three.js jsm addons use bare 'three' specifier
+- [Phase 04-ui-redesign]: u_bgBlend uniform + waveFading state provides 1s smooth fade from blue to black after wave ends
+- [Phase 04-ui-redesign]: bgA() is vignette gradient (not grid) — cleaner dark aesthetic
+- [Phase 04-ui-redesign P02]: Phone button is indigo-to-blue linear-gradient with neon-pulse (cyan↔magenta border), not flat glassmorphism
+- [Phase 04-ui-redesign P02]: Phone label "ENVIAR PULSO" 18px/700 — in-flight opacity:0.4; haptic vibrate([40,30,40]) double-pulse
+- [Phase 04-ui-redesign P02]: Press sequence: scale(0.92) + ripple at 0ms, chromatic ghost text-shadow at 60ms
 
 ### Pending Todos
 

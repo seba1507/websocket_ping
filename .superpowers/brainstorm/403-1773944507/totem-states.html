@@ -1,0 +1,86 @@
+<h2>Totem — Two States</h2>
+<p class="subtitle">Left: waiting (QR). Right: active (WebGL). Do these layouts look right?</p>
+
+<div class="split">
+
+  <!-- STATE 1: Waiting / QR -->
+  <div class="mockup">
+    <div class="mockup-header">State 1 — Waiting for phone</div>
+    <div class="mockup-body" style="background:#000;min-height:340px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:monospace;">
+
+      <!-- QR placeholder -->
+      <div style="width:140px;height:140px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+        <div style="width:110px;height:110px;background:repeating-linear-gradient(0deg,#000 0,#000 8px,transparent 8px,transparent 16px),repeating-linear-gradient(90deg,#000 0,#000 8px,transparent 8px,transparent 16px);opacity:0.85;"></div>
+      </div>
+
+      <!-- Room ID -->
+      <div style="font-size:18px;letter-spacing:0.3em;color:#f0f0f0;">A3F7</div>
+
+      <!-- Phone URL hint -->
+      <div style="font-size:9px;color:#333;letter-spacing:0.08em;">pingpong.fly.dev/phone?room=A3F7</div>
+
+      <!-- Bottom-left: ROOM label -->
+      <div style="position:absolute;bottom:12px;left:14px;font-size:9px;color:#222;letter-spacing:0.1em;">ROOM · A3F7</div>
+
+      <!-- Bottom-right: disconnected -->
+      <div style="position:absolute;bottom:12px;right:14px;font-size:9px;color:#333;letter-spacing:0.08em;display:flex;align-items:center;gap:6px;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#333;"></div>
+        WAITING
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 2: Active / WebGL -->
+  <div class="mockup">
+    <div class="mockup-header">State 2 — Phone connected (WebGL active)</div>
+    <div class="mockup-body" style="background:#000;min-height:340px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:monospace;">
+
+      <!-- Simulated WebGL ripple hint (CSS only approximation) -->
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 55% 45% at 50% 50%, rgba(0,20,60,0.35) 0%, transparent 70%);border-radius:6px;"></div>
+      <!-- Grid lines suggestion -->
+      <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(13,13,13,0.9) 1px,transparent 1px),linear-gradient(90deg,rgba(13,13,13,0.9) 1px,transparent 1px);background-size:20px 20px;border-radius:6px;"></div>
+
+      <!-- Latency — center -->
+      <div style="position:relative;font-size:52px;font-weight:700;color:#fff;letter-spacing:-0.02em;">42</div>
+      <div style="position:relative;font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:0.15em;margin-top:-4px;">ms</div>
+
+      <!-- Bottom-left -->
+      <div style="position:absolute;bottom:12px;left:14px;font-size:9px;color:#222;letter-spacing:0.1em;font-family:monospace;">ROOM · A3F7</div>
+
+      <!-- Bottom-right: connected -->
+      <div style="position:absolute;bottom:12px;right:14px;font-size:9px;color:#555;letter-spacing:0.08em;display:flex;align-items:center;gap:6px;font-family:monospace;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#00ff87;box-shadow:0 0 4px #00ff87;animation:pulse 2s infinite;"></div>
+        CONNECTED
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+@keyframes pulse {
+  0%,100% { opacity:1; }
+  50% { opacity:0.4; }
+}
+</style>
+
+<div class="section" style="margin-top:20px;">
+  <h3>Notes on State 2</h3>
+  <ul style="margin-top:8px;line-height:1.8;font-size:13px;">
+    <li>Center latency is empty until first ping arrives — no placeholder text</li>
+    <li>On <code>server:ping</code>: WebGL wave triggers + 880Hz beep plays</li>
+    <li>On <code>server:latency</code>: number updates + 500ms CSS chromatic aberration flash</li>
+    <li>If phone disconnects: totem returns to State 1 (QR screen)</li>
+  </ul>
+</div>
+
+<div class="options" style="margin-top:16px;">
+  <div class="option" data-choice="looks-good" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content"><h3>Looks good</h3><p>This layout works — proceed to phone design</p></div>
+  </div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)">
+    <div class="letter">~</div>
+    <div class="content"><h3>Need a tweak</h3><p>Something needs adjusting — I'll describe it</p></div>
+  </div>
+</div>

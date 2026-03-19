@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0a0a0a; font-family:monospace; color:#fff; padding:24px; }
+
+  .page-title { text-align:center; font-size:12px; color:#444; letter-spacing:0.15em; margin-bottom:6px; }
+  .page-sub   { text-align:center; font-size:10px; color:#2a2a2a; margin-bottom:28px; }
+
+  .screens { display:flex; gap:32px; justify-content:center; flex-wrap:wrap; align-items:flex-start; }
+
+  .screen-wrap { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .label { font-size:9px; color:#333; letter-spacing:0.15em; text-transform:uppercase; }
+
+  /* Screen frame */
+  .screen {
+    width:220px; height:400px;
+    background:#030303;
+    border-radius:20px;
+    border:1px solid #141414;
+    position:relative;
+    overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* subtle grid bg */
+  .grid {
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size:18px 18px;
+  }
+
+  /* ── CENTER DOT ── */
+  .center-dot {
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* Halo rings expanding outward */
+  .ring {
+    position:absolute;
+    border-radius:50%;
+    border:1px solid rgba(0,255,135,0.15);
+    animation:ring-expand 3s ease-out infinite;
+  }
+  .ring:nth-child(1) { width:18px;  height:18px;  animation-delay:0s; }
+  .ring:nth-child(2) { width:18px;  height:18px;  animation-delay:1s; }
+  .ring:nth-child(3) { width:18px;  height:18px;  animation-delay:2s; }
+
+  @keyframes ring-expand {
+    0%   { transform:scale(1);   opacity:0.7; }
+    100% { transform:scale(9);   opacity:0;   }
+  }
+
+  /* Inner glow fill */
+  .dot-glow {
+    position:absolute;
+    width:18px; height:18px;
+    border-radius:50%;
+    background:rgba(0,255,135,0.08);
+    animation:glow-pulse 2s ease-in-out infinite;
+  }
+  @keyframes glow-pulse {
+    0%,100% { transform:scale(1);   opacity:0.5; }
+    50%     { transform:scale(1.6); opacity:1;   }
+  }
+
+  /* Core dot */
+  .dot-core {
+    width:8px; height:8px;
+    border-radius:50%;
+    background:#00ff87;
+    box-shadow:0 0 10px 3px rgba(0,255,135,0.85);
+    position:relative; z-index:2;
+    animation:core-pulse 2s ease-in-out infinite;
+  }
+  @keyframes core-pulse {
+    0%,100% { box-shadow:0 0 6px 1px rgba(0,255,135,0.6); }
+    50%     { box-shadow:0 0 16px 5px rgba(0,255,135,0.95); }
+  }
+
+  /* Labels below dot */
+  .dot-label {
+    position:absolute;
+    top:calc(50% + 28px);
+    left:50%; transform:translateX(-50%);
+    font-size:8px; letter-spacing:0.3em;
+    color:rgba(0,255,135,0.35);
+    white-space:nowrap;
+  }
+
+  /* QR - small, below center */
+  .qr-small {
+    position:absolute;
+    bottom:52px; left:50%; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+  }
+  .qr-img {
+    width:52px; height:52px;
+    background:#fff; border-radius:3px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .qr-inner {
+    width:42px; height:42px;
+    background-image:
+      repeating-linear-gradient(0deg,#000 0,#000 4px,transparent 4px,transparent 8px),
+      repeating-linear-gradient(90deg,#000 0,#000 4px,transparent 4px,transparent 8px);
+  }
+  .qr-code-label {
+    font-size:7px; color:#1e1e1e; letter-spacing:0.2em;
+  }
+
+  /* Separator + ms area */
+  .sep-area {
+    position:absolute;
+    top:calc(50% + 50px);
+    left:50%; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .sep { width:22px; height:1px; background:#00ff87; opacity:0.4; }
+  .ms-txt { font-size:8px; color:#222; letter-spacing:0.2em; }
+
+  /* Corners */
+  .corner-bl {
+    position:absolute; bottom:10px; left:12px;
+    font-size:7px; color:#1e1e1e; letter-spacing:0.12em;
+  }
+  .corner-br {
+    position:absolute; bottom:10px; right:12px;
+    font-size:7px; color:#2a2a2a; letter-spacing:0.08em;
+    display:flex; align-items:center; gap:4px;
+  }
+  .br-dot { width:4px; height:4px; border-radius:50%; background:#2a2a2a; }
+
+  /* ── ACTIVE STATE ── */
+  .radial-bg {
+    position:absolute; inset:0;
+    background:radial-gradient(ellipse 55% 45% at 50% 50%,rgba(0,15,55,0.5) 0%,transparent 65%);
+  }
+  .latency-center {
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .lat-val { font-size:64px; font-weight:700; color:#fff; line-height:1; }
+  .lat-unit { font-size:9px; color:rgba(255,255,255,0.2); letter-spacing:0.2em; margin-top:3px; }
+
+  .active-dot-top {
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    z-index:3;
+  }
+  .sep-active {
+    position:absolute; top:calc(50% + 54px); left:50%;
+    transform:translateX(-50%);
+    width:22px; height:1px; background:#00ff87; opacity:0.5;
+  }
+
+  .corner-br-active {
+    position:absolute; bottom:10px; right:12px;
+    font-size:7px; color:#444; letter-spacing:0.08em;
+    display:flex; align-items:center; gap:4px;
+  }
+  .br-dot-active {
+    width:4px; height:4px; border-radius:50%;
+    background:#00ff87; box-shadow:0 0 4px #00ff87;
+    animation:dot-blink 2s ease-in-out infinite;
+  }
+  @keyframes dot-blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* caption */
+  .caption {
+    font-size:9px; color:#333; text-align:center;
+    max-width:200px; line-height:1.6; letter-spacing:0.05em;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">TOTEM — DOT CENTRADO = ORIGEN DE LA ONDA</div>
+<div class="page-sub">El dot vive en UV (0.5, 0.5) — el mismo punto desde donde sale la onda WebGL</div>
+
+<div class="screens">
+
+  <!-- WAITING: dot center + QR small below -->
+  <div class="screen-wrap">
+    <div class="label">Espera · dot centrado</div>
+    <div class="screen">
+      <div class="grid"></div>
+
+      <!-- Rings expanding from center -->
+      <div class="center-dot">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="dot-glow"></div>
+        <div class="dot-core"></div>
+      </div>
+
+      <div class="dot-label">EN ESPERA</div>
+
+      <!-- QR small, below center -->
+      <div class="qr-small">
+        <div class="qr-img"><div class="qr-inner"></div></div>
+        <div class="qr-code-label">A3F7</div>
+      </div>
+
+      <div class="corner-bl">ROOM · A3F7</div>
+      <div class="corner-br"><div class="br-dot"></div>WAITING</div>
+    </div>
+    <div class="caption">QR pequeño abajo, dot + anillos en el centro exacto de la pantalla</div>
+  </div>
+
+  <!-- WAITING: dot center, NO QR (código en corner solamente) -->
+  <div class="screen-wrap">
+    <div class="label">Espera · sin QR</div>
+    <div class="screen">
+      <div class="grid"></div>
+
+      <div class="center-dot">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="dot-glow"></div>
+        <div class="dot-core"></div>
+      </div>
+
+      <div class="dot-label">EN ESPERA</div>
+
+      <div class="sep-area">
+        <div class="sep"></div>
+        <div class="ms-txt">ms</div>
+      </div>
+
+      <div class="corner-bl">ROOM · A3F7</div>
+      <div class="corner-br"><div class="br-dot"></div>WAITING</div>
+    </div>
+    <div class="caption">Sin QR — solo el dot y el código en la esquina inferior</div>
+  </div>
+
+  <!-- ACTIVE: WebGL triggered, latency in center (dot becomes wave origin) -->
+  <div class="screen-wrap">
+    <div class="label">Activo · después del ping</div>
+    <div class="screen">
+      <div class="grid"></div>
+      <div class="radial-bg"></div>
+
+      <!-- Latency replaces dot at center -->
+      <div class="latency-center">
+        <div class="lat-val">42</div>
+        <div class="lat-unit">ms</div>
+      </div>
+      <div class="sep-active"></div>
+
+      <div class="corner-bl">ROOM · A3F7</div>
+      <div class="corner-br-active">
+        <div class="br-dot-active"></div>
+        CONNECTED
+      </div>
+    </div>
+    <div class="caption">El número de latencia ocupa el centro — misma posición que el dot</div>
+  </div>
+
+</div>
+
+</body>
+</html>

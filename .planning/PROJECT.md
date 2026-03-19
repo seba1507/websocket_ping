@@ -14,7 +14,7 @@ Provide an objective, brutally obvious, and instant measurement of network laten
 
 <!-- Shipped and confirmed valuable. -->
 
-(None yet — ship to validate)
+- [x] **Flawless Handshake**: QR code scan reliably connects a specific phone to a specific Totem via Socket.io Rooms without crossover errors. (Validated in Phase 1: base-connection)
 
 ### Active
 
@@ -25,7 +25,6 @@ Provide an objective, brutally obvious, and instant measurement of network laten
 - [ ] **Haptic/Visual Pong Feedback**: The phone must receive the 'pong' back from the server/Totem and trigger a physical haptic vibration or visual flash, confirming the full round-trip.
 - [ ] **Objective Measurement**: Overwrite a giant text in the center of the Totem showing the exact latency (e.g., `⏱️ 42 ms`).
 - [ ] **Audio Cue**: Trigger a short, dry "beep" sound alongside the flash (human ear detects desync better than the eye).
-- [ ] **Flawless Handshake**: QR code scan must reliably connect a specific phone to a specific Totem via Socket.io Rooms without crossover errors.
 - [ ] **30-Second Grace Period**: If the phone disconnects (screen lock, 4G loss), Totem enters a warning state: "Conexión inestable... Esperando al jugador [30s]".
 - [ ] **Seamless Auto-Reconnect**: If the phone returns within 30s, the session resumes instantly without user friction.
 - [ ] **Session Timeout**: After 30s of phone disconnection, the server destroys the room. The Totem clears the warning, kicks the phone logically, and displays a completely new QR code for the next user. Late reconnects get a "Tu sesión expiró" message.
@@ -53,9 +52,9 @@ Provide an objective, brutally obvious, and instant measurement of network laten
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Use Socket.io over raw `ws` | Built-in resilience, rooms, and automatic fallbacks to HTTP polling for unstable 4G | — Pending |
+| Use Socket.io over raw `ws` | Built-in resilience, rooms, and automatic fallbacks to HTTP polling for unstable 4G | ✓ Confirmed (Phase 1) |
 | Color flash instead of animation | Instant rendering guarantees that measured delay is network-level, not graphical | — Pending |
 | 30s Grace Period | Minimizes user friction; re-scanning a QR code ruins the experience if a minor drop occurs | — Pending |
 
 ---
-*Last updated: 2026-03-19 after project initialization*
+*Last updated: 2026-03-19 after Phase 01 completion*
