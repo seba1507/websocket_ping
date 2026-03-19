@@ -21,12 +21,14 @@ Provide an objective, brutally obvious, and instant measurement of network laten
 <!-- Current scope. Building toward these. -->
 
 - [ ] **Instant Visual Feedback**: Totem must show a full-screen intense color flash (e.g., dark gray to neon green for 200ms) upon phone button press.
+- [ ] **Phone Minimalist UI**: The mobile interface must consist of a single, full-screen interactive area (a giant button) reading "SEND PING", preventing any user confusion.
+- [ ] **Haptic/Visual Pong Feedback**: The phone must receive the 'pong' back from the server/Totem and trigger a physical haptic vibration or visual flash, confirming the full round-trip.
 - [ ] **Objective Measurement**: Overwrite a giant text in the center of the Totem showing the exact latency (e.g., `⏱️ 42 ms`).
 - [ ] **Audio Cue**: Trigger a short, dry "beep" sound alongside the flash (human ear detects desync better than the eye).
 - [ ] **Flawless Handshake**: QR code scan must reliably connect a specific phone to a specific Totem via Socket.io Rooms without crossover errors.
 - [ ] **30-Second Grace Period**: If the phone disconnects (screen lock, 4G loss), Totem enters a warning state: "Conexión inestable... Esperando al jugador [30s]".
 - [ ] **Seamless Auto-Reconnect**: If the phone returns within 30s, the session resumes instantly without user friction.
-- [ ] **Session Timeout**: After 30s of disconnection, the session is destroyed, the room is cleared, and a new QR is generated. Late reconnects get a "Tu sesión expiró" message.
+- [ ] **Session Timeout**: After 30s of phone disconnection, the server destroys the room. The Totem clears the warning, kicks the phone logically, and displays a completely new QR code for the next user. Late reconnects get a "Tu sesión expiró" message.
 
 ### Out of Scope
 

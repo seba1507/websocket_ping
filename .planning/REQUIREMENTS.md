@@ -13,17 +13,18 @@
 
 ### Real-time Interaction
 
-- [ ] **INT-01**: Phone displays a large, obvious button to trigger the ping.
+- [ ] **INT-01**: Phone displays a single, full-screen interactive area (a giant button) reading "SEND PING" to trigger the ping.
 - [ ] **INT-02**: Totem registers the ping and flashes intense color (e.g., neon green) for 200ms.
 - [ ] **INT-03**: Totem plays a short "beep" sound concurrently with the color flash.
 - [ ] **INT-04**: Totem calculates and displays the exact network latency (in ms) of the roundtrip/one-way trip.
+- [ ] **INT-05**: Phone receives 'pong' from server/Totem and triggers a physical haptic vibration or visual flash.
 
 ### Resilience
 
 - [ ] **RES-01**: Totem detects phone disconnection and enters a 30-second "Grace Period" warning state.
 - [ ] **RES-02**: Phone automatically reconnects to the same Room if connectivity is restored within 30s.
 - [ ] **RES-03**: Totem resumes the active session seamlessly upon phone reconnection.
-- [ ] **RES-04**: Totem destroys the session, closes the room, and generates a new QR if the 30s timeout is reached.
+- [ ] **RES-04**: After 30s of phone disconnection, the server destroys the room. Totem clears warning, logically kicks phone, and displays new QR.
 - [ ] **RES-05**: Phone displays "Tu sesión expiró" if it attempts to reconnect after the 30s timeout.
 
 ## v2 Requirements
@@ -42,23 +43,24 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BASE-01 | TBD | Pending |
-| BASE-02 | TBD | Pending |
-| BASE-03 | TBD | Pending |
-| INT-01 | TBD | Pending |
-| INT-02 | TBD | Pending |
-| INT-03 | TBD | Pending |
-| INT-04 | TBD | Pending |
-| RES-01 | TBD | Pending |
-| RES-02 | TBD | Pending |
-| RES-03 | TBD | Pending |
-| RES-04 | TBD | Pending |
-| RES-05 | TBD | Pending |
+| BASE-01 | Phase 1 | Pending |
+| BASE-02 | Phase 1 | Pending |
+| BASE-03 | Phase 1 | Pending |
+| INT-01 | Phase 2 | Pending |
+| INT-02 | Phase 2 | Pending |
+| INT-03 | Phase 2 | Pending |
+| INT-04 | Phase 2 | Pending |
+| INT-05 | Phase 2 | Pending |
+| RES-01 | Phase 3 | Pending |
+| RES-02 | Phase 3 | Pending |
+| RES-03 | Phase 3 | Pending |
+| RES-04 | Phase 3 | Pending |
+| RES-05 | Phase 3 | Pending |
 
 **Coverage:**
-- v1 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12 ⚠️
+- v1 requirements: 13 total
+- Mapped to phases: 13
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-19*
