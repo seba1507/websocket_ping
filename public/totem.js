@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io({ transports: ['websocket'] });
 
 const statusEl = document.getElementById('status');
 const canvasEl = document.getElementById('qr-canvas');
