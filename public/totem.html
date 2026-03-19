@@ -6,160 +6,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ping-Pong Totem</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #020202; font-family: 'Courier New', monospace; }
 
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #020202;
-      font-family: 'Courier New', monospace;
-    }
-
-    /* Fondo de distorsión WebGL (Onda expansiva) */
-    #webgl-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 0;
-    }
-
-    /* Nueva Anomalía 3D (Reemplaza al dormant-canvas) */
+    #webgl-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
     #three-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 1;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 1s ease-in-out;
-      mix-blend-mode: screen;
-      /* Clave para que el bloom se fusione con la onda de fondo */
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none;
+      opacity: 0; transition: opacity 1s ease-in-out; mix-blend-mode: screen;
     }
 
-    #qr-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      background: transparent;
-    }
+    #qr-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: transparent; }
+    #qr-screen #qr-canvas { border: 2px solid rgba(255, 255, 255, 0.05); border-radius: 8px; background: #fff; padding: 12px; }
+    #qr-screen #room-id { font-size: 2.5rem; font-weight: bold; letter-spacing: 0.4em; color: rgba(255, 255, 255, 0.75); }
+    #qr-screen #phone-url { font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); max-width: 500px; text-align: center; word-break: break-all; }
 
-    #qr-screen #qr-canvas {
-      border: 2px solid rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      background: #fff;
-      padding: 12px;
-    }
-
-    #qr-screen #room-id {
-      font-size: 2.5rem;
-      font-weight: bold;
-      letter-spacing: 0.4em;
-      color: rgba(255, 255, 255, 0.75);
-    }
-
-    #qr-screen #phone-url {
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.4);
-      max-width: 500px;
-      text-align: center;
-      word-break: break-all;
-    }
-
-    #overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 10;
-      pointer-events: none;
-    }
+    #overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; }
 
     #latency-display {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 6rem;
-      font-weight: bold;
-      color: rgba(255, 255, 255, 0.95);
-      letter-spacing: 0.05em;
-      text-shadow: 0 0 20px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.8);
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 7rem; /* Ligeramente más grande */
+      font-weight: bold; color: rgba(255, 255, 255, 0.95); letter-spacing: 0.05em;
+      text-shadow: 0 0 30px rgba(0,240,255,0.4), 0 4px 12px rgba(0,0,0,0.9);
+      opacity: 0; /* Oculto por defecto hasta el primer ping */
+    }
+
+    /* Animación de golpe épico para el texto */
+    @keyframes epic-pop {
+      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; filter: blur(10px); }
+      40% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; filter: blur(0px); text-shadow: 10px 0 #ff003c, -10px 0 #00f0ff; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff, 0 0 20px rgba(0,240,255,0.6); }
     }
 
     .chroma-flash {
-      text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff;
+      animation: epic-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
     }
 
-    #corner-bl {
-      position: absolute;
-      bottom: 20px;
-      left: 24px;
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.7);
-      letter-spacing: 0.1em;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.9);
-    }
-
-    /* Ajustes para hacer el "CONNECTED" mucho más grande e impactante */
+    #corner-bl { position: absolute; bottom: 20px; left: 24px; font-size: 14px; color: rgba(255, 255, 255, 0.7); letter-spacing: 0.1em; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
     #corner-br {
-      position: absolute;
-      bottom: 24px;
-      right: 28px;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.9);
-      letter-spacing: 0.15em;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+      position: absolute; bottom: 24px; right: 28px; font-size: 1.5rem; font-weight: 700; color: rgba(255, 255, 255, 0.9);
+      letter-spacing: 0.15em; display: flex; align-items: center; gap: 14px; text-shadow: 0 1px 6px rgba(0,0,0,0.9);
     }
-
-    #corner-br .dot {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      /* Punto más grande */
-      border-radius: 50%;
-      background: #1a1a1a;
-    }
-
-    #corner-br .dot.active {
-      background: #00ff87;
-      box-shadow: 0 0 12px #00ff87;
-      animation: pulse-dot 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse-dot {
-
-      0%,
-      100% {
-        opacity: 0.7;
-      }
-
-      50% {
-        opacity: 1;
-      }
-    }
+    #corner-br .dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #1a1a1a; }
+    #corner-br .dot.active { background: #00ff87; box-shadow: 0 0 12px #00ff87; animation: pulse-dot 2s ease-in-out infinite; }
+    @keyframes pulse-dot { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
   </style>
 </head>
 
@@ -244,7 +133,7 @@
         float organic = fBm(uv * 3.0); float noisyDist = dist + (organic - 0.5) * 0.28 * u_strength;
         float inBand = smoothstep(u_wave - 0.18, u_wave, noisyDist) * (1.0 - smoothstep(u_wave, u_wave + 0.02, noisyDist));
         vec2 dir = normalize(uv - origin); vec2 perp = vec2(-dir.y, dir.x);
-        float localNoise = noise(uv * 15.0 + u_time * 2.0); float highFreqNoise = fBm(uv * 50.0 - u_time * 3.0); 
+        float localNoise = noise(uv * 15.0 + u_time * 2.0); float highFreqNoise = fBm(uv * 50.0 - u_time * 3.0);
 
         vec2 uvR = uv + dir * (inBand * u_strength * 0.40) + perp * localNoise * 0.1;
         vec2 uvG = uv + dir * (inBand * u_strength * 0.15) - perp * localNoise * 0.05;
@@ -255,7 +144,7 @@
         float b = smoothstep(0.2, 0.8, fBm(uvB * 4.0 + u_time * 0.4));
         vec3 chromatic = vec3(r, g, b);
 
-        float perpDot = dot(uv - origin, perp); float flareStrength = inBand * u_strength * 2.5; 
+        float perpDot = dot(uv - origin, perp); float flareStrength = inBand * u_strength * 2.5;
         chromatic += vec3(1.0, 0.0, 0.8) * max(perpDot, 0.0) * flareStrength + vec3(0.0, 1.0, 0.933) * max(-perpDot, 0.0) * flareStrength;
         chromatic += vec3(2.0) * smoothstep(u_wave - 0.04, u_wave - 0.01, noisyDist) * u_strength * inBand;
 
@@ -296,7 +185,10 @@
     const threeCanvas = document.getElementById('three-canvas');
     let scene, camera, renderer, composer, clock;
     let sphere, sphereMaterial;
-    let anomalyPulse = 0; // Controla la reacción al ping
+    let bloomPass; // Globalizamos el bloom pass para poder inyectarle energía
+
+    let anomalyPulse = 0;
+    let cameraShake = 0; // Nueva variable de epicidad
 
     function initThreeJS() {
       scene = new THREE.Scene();
@@ -307,10 +199,11 @@
       renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.setClearColor(0x000000, 1); // Fondo negro (se fusionará con screen blending)
+      renderer.setClearColor(0x000000, 1);
 
       const renderScene = new RenderPass(scene, camera);
-      const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.2, 0.5);
+      // Base bloom moderado
+      bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.2, 0.3);
       const outputPass = new OutputPass();
 
       composer = new EffectComposer(renderer);
@@ -322,7 +215,7 @@
       sphereMaterial = new THREE.ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
-          uPulse: { value: 0 }, // Sincronizado con el Ping
+          uPulse: { value: 0 },
           uColorGlow: { value: new THREE.Color(0x00ffff) },
           uColorPeak: { value: new THREE.Color(0xff00cc) }
         },
@@ -330,11 +223,11 @@
           uniform float uTime; uniform float uPulse; varying vec3 vNormal; varying vec3 vPosition; varying float vNoise;
           vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; } vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
           vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); } vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-          float snoise(vec3 v) { 
+          float snoise(vec3 v) {
             const vec2 C = vec2(1.0/6.0, 1.0/3.0); const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
             vec3 i  = floor(v + dot(v, C.yyy)); vec3 x0 = v - i + dot(i, C.xxx);
             vec3 g = step(x0.yzx, x0.xyz); vec3 l = 1.0 - g; vec3 i1 = min(g.xyz, l.zxy); vec3 i2 = max(g.xyz, l.zxy);
-            vec3 x1 = x0 - i1 + C.xxx; vec3 x2 = x0 - i2 + C.yyy; vec3 x3 = x0 - D.yyy; i = mod289(i); 
+            vec3 x1 = x0 - i1 + C.xxx; vec3 x2 = x0 - i2 + C.yyy; vec3 x3 = x0 - D.yyy; i = mod289(i);
             vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
             float n_ = 0.142857142857; vec3 ns = n_ * D.wyz - D.xzx; vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
             vec4 x_ = floor(j * ns.z); vec4 y_ = floor(j - 7.0 * x_); vec4 x = x_ *ns.x + ns.yyyy; vec4 y = y_ *ns.x + ns.yyyy;
@@ -351,8 +244,8 @@
             float lowFreq = snoise(position * 1.5 + uTime * 0.2);
             float highFreq = snoise(position * 8.0 - uTime * 0.4) * 0.1;
             vNoise = lowFreq + highFreq;
-            // Respiración base + Explosión de pulso
-            float displacement = vNoise * (0.3 + uPulse * 0.8);
+            // Explosión de volumen extrema
+            float displacement = vNoise * (0.3 + uPulse * 1.2);
             vec3 newPos = position + normal * displacement;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
           }
@@ -364,10 +257,11 @@
             vec3 viewDir = normalize(cameraPosition - vPosition);
             float fresnel = pow(1.0 - dot(viewDir, vNormal), 3.0);
             vec3 color = mix(uColorGlow, uColorPeak, smoothstep(-0.2, 0.5, vNoise));
-            
-            // Intensificar luz durante el pulso
-            color += uColorGlow * fresnel * (2.0 + uPulse * 2.0);
-            
+
+            // Núcleo blanco caliente durante el impacto
+            vec3 coreHeat = vec3(1.0) * uPulse;
+            color += uColorGlow * fresnel * (2.0 + uPulse * 3.0) + coreHeat;
+
             float alpha = mix(0.15, 1.0, fresnel);
             gl_FragColor = vec4(color, alpha);
           }
@@ -383,7 +277,7 @@
 
 
     // ==========================================
-    // 3. RENDER LOOP UNIFICADO
+    // 3. RENDER LOOP UNIFICADO (EPIC UPGRADE)
     // ==========================================
     function renderAll(now) {
       // -- WebGL Background --
@@ -408,15 +302,33 @@
       if (clock) {
         sphereMaterial.uniforms.uTime.value = clock.getElapsedTime();
 
-        // Pulso sincronizado con la onda — time-based desde waveStartTime
-        if (waveActive || waveFading) {
-          sphereMaterial.uniforms.uPulse.value = Math.max(0, 1.0 - (now - waveStartTime) / 800);
-        } else {
-          sphereMaterial.uniforms.uPulse.value = 0;
+        // CAMERA SHAKE
+        if (cameraShake > 0) {
+          camera.position.x = (Math.random() - 0.5) * cameraShake;
+          camera.position.y = (Math.random() - 0.5) * cameraShake;
+          cameraShake *= 0.85; // Fricción del temblor
+          if (cameraShake < 0.001) {
+            camera.position.x = 0; camera.position.y = 0; cameraShake = 0;
+          }
         }
 
-        sphere.rotation.y += 0.002;
-        sphere.rotation.x += 0.001;
+        // DECAIMIENTO Y FÍSICA
+        if (anomalyPulse > 0) {
+          anomalyPulse -= 0.015;
+        }
+        const currentPulse = Math.max(0, anomalyPulse);
+        sphereMaterial.uniforms.uPulse.value = currentPulse;
+
+        // BLOOM SURGE (Sobrecarga de luz)
+        bloomPass.strength = 0.5 + (currentPulse * 3.5);
+
+        // LATIGAZO ROTACIONAL Y ESCALADO
+        sphere.rotation.y += 0.002 + (currentPulse * 0.1); // Gira rápido al impactar
+        sphere.rotation.x += 0.001 + (currentPulse * 0.05);
+
+        const scaleE = 0.25 + (currentPulse * 0.15); // Crece al golpear
+        sphere.scale.set(scaleE, scaleE, scaleE);
+
         composer.render();
       }
       requestAnimationFrame(renderAll);
@@ -440,7 +352,6 @@
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const t = audioCtx.currentTime;
 
-        // Layer 1 — Sub-Bass impact (dominant)
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.type = 'sine';
@@ -451,7 +362,6 @@
         osc1.connect(gain1); gain1.connect(audioCtx.destination);
         osc1.start(t); osc1.stop(t + 0.15);
 
-        // Layer 2 — Energy whiplash (texture)
         const osc2 = audioCtx.createOscillator();
         const filter = audioCtx.createBiquadFilter();
         const gain2 = audioCtx.createGain();
@@ -468,7 +378,7 @@
       } catch (e) { }
     }
 
-    const socket = window.io({ transports: ['websocket'] }); // window.io funciona perfecto aquí
+    const socket = window.io({ transports: ['websocket'] });
     let chromaFlashTimeout = null;
 
     socket.on('connect', () => { socket.emit('totem:ready'); });
@@ -482,7 +392,7 @@
 
     socket.on('totem:phone-connected', () => {
       document.getElementById('qr-screen').style.display = 'none';
-      threeCanvas.style.opacity = '1'; // Revelamos la anomalía
+      threeCanvas.style.opacity = '1';
       const dot = document.querySelector('#corner-br .dot');
       dot.classList.add('active');
       document.querySelector('#corner-br .label').textContent = 'CONNECTED';
@@ -490,7 +400,7 @@
 
     socket.on('phone:disconnected', () => {
       document.getElementById('qr-screen').style.display = 'flex';
-      threeCanvas.style.opacity = '0'; // Ocultamos la anomalía
+      threeCanvas.style.opacity = '0';
       const dot = document.querySelector('#corner-br .dot');
       dot.classList.remove('active');
       document.querySelector('#corner-br .label').textContent = 'WAITING';
@@ -498,23 +408,29 @@
     });
 
     socket.on('server:ping', () => {
-      // 1. Detonamos la onda de fondo (Raw WebGL)
+      // 1. Onda de fondo
       gl.uniform2f(loc.u_origin, 0.5, 0.5);
       waveStartTime = performance.now();
       waveActive = true; waveFading = false;
 
-      // 2. Detonamos la reacción de la anomalía 3D
+      // 2. Detonamos la reacción épica
       anomalyPulse = 1.0;
+      cameraShake = 0.12; // Inyectamos violencia a la cámara
 
       playBeep();
     });
 
     socket.on('server:latency', ({ latencyMs }) => {
       const el = document.getElementById('latency-display');
-      el.innerHTML = latencyMs + '<span style="font-size:2rem;opacity:0.45;margin-left:0.2em;letter-spacing:0.05em">ms</span>';
+      el.innerHTML = latencyMs + '<span style="font-size:3rem;opacity:0.6;margin-left:0.1em;letter-spacing:0.05em">ms</span>';
+
+      // Reiniciamos la animación CSS con un truco de reflow
       if (chromaFlashTimeout) { clearTimeout(chromaFlashTimeout); el.classList.remove('chroma-flash'); }
-      void el.offsetWidth; el.classList.add('chroma-flash');
-      chromaFlashTimeout = setTimeout(() => { el.classList.remove('chroma-flash'); chromaFlashTimeout = null; }, 500);
+      void el.offsetWidth;
+
+      // Aplicamos el golpe tipográfico
+      el.classList.add('chroma-flash');
+      chromaFlashTimeout = setTimeout(() => { el.classList.remove('chroma-flash'); chromaFlashTimeout = null; }, 400);
     });
   </script>
 </body>
