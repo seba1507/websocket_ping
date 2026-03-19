@@ -51,6 +51,9 @@ function getBaseUrl() {
   if (process.env.RENDER_EXTERNAL_URL) {
     return process.env.RENDER_EXTERNAL_URL;
   }
+  if (process.env.FLY_APP_NAME) {
+    return `https://${process.env.FLY_APP_NAME}.fly.dev`;
+  }
   return `http://${lanIp}:${PORT}`;
 }
 
