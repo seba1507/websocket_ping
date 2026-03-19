@@ -258,9 +258,9 @@
             float fresnel = pow(1.0 - dot(viewDir, vNormal), 3.0);
             vec3 color = mix(uColorGlow, uColorPeak, smoothstep(-0.2, 0.5, vNoise));
 
-            // Núcleo blanco caliente durante el impacto
-            vec3 coreHeat = vec3(1.0) * uPulse;
-            color += uColorGlow * fresnel * (0.3 + uPulse * 4.0) + coreHeat;
+            // Núcleo blanco caliente durante el impacto (contenido)
+            vec3 coreHeat = vec3(0.4) * uPulse;
+            color += uColorGlow * fresnel * (0.3 + uPulse * 1.2) + coreHeat;
 
             float alpha = mix(0.15, 1.0, fresnel);
             gl_FragColor = vec4(color, alpha);
@@ -319,15 +319,14 @@
         const currentPulse = Math.max(0, anomalyPulse);
         sphereMaterial.uniforms.uPulse.value = currentPulse;
 
-        // BLOOM SURGE (Sobrecarga de luz)
-        bloomPass.strength = 0.2 + (currentPulse * 1.5);
+        // Bloom fijo — la onda es el protagonista del impacto
+        bloomPass.strength = 0.2;
 
-        // LATIGAZO ROTACIONAL Y ESCALADO
-        sphere.rotation.y += 0.002 + (currentPulse * 0.1); // Gira rápido al impactar
-        sphere.rotation.x += 0.001 + (currentPulse * 0.05);
+        // Rotación sutil, sin escalar al impacto
+        sphere.rotation.y += 0.002 + (currentPulse * 0.04);
+        sphere.rotation.x += 0.001 + (currentPulse * 0.02);
 
-        const scaleE = 0.25 + (currentPulse * 0.15); // Crece al golpear
-        sphere.scale.set(scaleE, scaleE, scaleE);
+        sphere.scale.set(0.25, 0.25, 0.25);
 
         composer.render();
       }
