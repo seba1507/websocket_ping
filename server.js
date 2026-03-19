@@ -76,6 +76,19 @@ io.on('connection', (socket) => {
     socket.emit('server:joined', { roomId });
   });
 
+  // Phone sends a ping — relay to room (Totem) and respond with pong
+  socket.on('phone:ping', ({ roomId }) => {
+    console.log(`Ping from phone in room: ${roomId}`);
+    io.to(roomId).except(socket.id).emit('server:ping', {});
+    socket.emit('server:pong', {});
+  });
+
+  // Phone reports calculated RTT — forward to room (Totem)
+  socket.on('phone:latency', ({ roomId, latencyMs }) => {
+    console.log(`Latency reported: ${latencyMs}ms in room ${roomId}`);
+    io.to(roomId).except(socket.id).emit('server:latency', { latencyMs });
+  });
+
   // Handle disconnect
   socket.on('disconnect', () => {
     if (socket.data.role === 'phone') {
