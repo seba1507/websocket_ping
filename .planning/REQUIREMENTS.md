@@ -7,17 +7,17 @@
 
 ### Base Pipeline
 
-- [ ] **BASE-01**: Totem can generate a unique Room QR code.
-- [ ] **BASE-02**: Phone can scan QR code and connect to the specific Totem Room.
-- [ ] **BASE-03**: Totem and Phone utilize Socket.io for WebSocket communication and fallback.
+- [x] **BASE-01**: Totem can generate a unique Room QR code.
+- [x] **BASE-02**: Phone can scan QR code and connect to the specific Totem Room.
+- [x] **BASE-03**: Totem and Phone utilize Socket.io for WebSocket communication and fallback.
 
 ### Real-time Interaction
 
-- [ ] **INT-01**: Phone displays a single, full-screen interactive area (a giant button) reading "SEND PING" to trigger the ping.
+- [x] **INT-01**: Phone displays a single, full-screen interactive area (a giant button) reading "SEND PING" to trigger the ping.
 - [ ] **INT-02**: Totem registers the ping and flashes intense color (e.g., neon green) for 200ms.
 - [ ] **INT-03**: Totem plays a short "beep" sound concurrently with the color flash.
 - [ ] **INT-04**: Totem calculates and displays the exact network latency (in ms) of the roundtrip/one-way trip.
-- [ ] **INT-05**: Phone receives 'pong' from server/Totem and triggers a physical haptic vibration or visual flash.
+- [x] **INT-05**: Phone receives 'pong' from server/Totem and triggers a physical haptic vibration or visual flash.
 
 ### Resilience
 
@@ -43,14 +43,14 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BASE-01 | Phase 1 | Pending |
-| BASE-02 | Phase 1 | Pending |
-| BASE-03 | Phase 1 | Pending |
-| INT-01 | Phase 2 | Pending |
+| BASE-01 | Phase 1 | Complete |
+| BASE-02 | Phase 1 | Complete |
+| BASE-03 | Phase 1 | Complete |
+| INT-01 | Phase 2 | Complete |
 | INT-02 | Phase 2 | Pending |
 | INT-03 | Phase 2 | Pending |
 | INT-04 | Phase 2 | Pending |
-| INT-05 | Phase 2 | Pending |
+| INT-05 | Phase 2 | Complete |
 | RES-01 | Phase 3 | Pending |
 | RES-02 | Phase 3 | Pending |
 | RES-03 | Phase 3 | Pending |
