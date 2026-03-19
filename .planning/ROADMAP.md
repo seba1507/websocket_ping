@@ -6,7 +6,7 @@ A 3-phase journey to build a minimalist WebSocket sandox. We start by establishi
 
 ## Phases
 
-- [ ] **Phase 1: Base Connection** - Establish a reliable Socket.io connection between Totem and Phone via QR code.
+- [x] **Phase 1: Base Connection (2026-03-19)** - Establish a reliable Socket.io connection between Totem and Phone via QR code.
 - [ ] **Phase 2: Real-time Interaction** - Implement the core latency measurement loop and visual/audio feedback.
 - [ ] **Phase 3: Connection Resilience** - Handle unstable 4G drops with a 30-second Grace Period and session expiration.
 
@@ -23,8 +23,8 @@ A 3-phase journey to build a minimalist WebSocket sandox. We start by establishi
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Totem server setup and QR generation
-- [ ] 01-02: Phone client connection and room joining
+- [x] 01-01: Totem server setup and QR generation
+- [x] 01-02: Phone client connection and room joining
 
 ### Phase 2: Real-time Interaction
 **Goal**: Implement the core latency measurement loop (Ping-Pong) and visual/audio feedback.
@@ -38,8 +38,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: Ping event handling and latency calculation logic
-- [ ] 02-02: Totem visual flash and audio beep integration
+- [ ] 02-01-PLAN.md — Server ping routing + phone ping/pong UI (button, RTT calc, flash, haptic)
+- [ ] 02-02-PLAN.md — Totem flash, beep, and latency display + end-to-end verification
 
 ### Phase 3: Connection Resilience
 **Goal**: Handle unstable 4G drops with a 30-second Grace Period and session expiration.
@@ -62,6 +62,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Base Connection | 0/2 | Not started | - |
+| 1. Base Connection | 2/2 | Complete | 2026-03-19 |
 | 2. Real-time Interaction | 0/2 | Not started | - |
 | 3. Connection Resilience | 0/2 | Not started | - |
