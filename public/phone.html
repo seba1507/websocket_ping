@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Ping-Pong Phone</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a1a;
+      color: #f0f0f0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      gap: 20px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    #status {
+      font-size: 1.2rem;
+      color: #888;
+      letter-spacing: 0.05em;
+    }
+
+    #status.connected {
+      color: #39ff14;
+    }
+
+    #status.error {
+      color: #ff4444;
+    }
+
+    #room-display {
+      font-size: 1rem;
+      color: #555;
+      letter-spacing: 0.15em;
+    }
+
+    /* Phase 2 will make this the active ping button */
+    #ping-btn {
+      display: none;
+      width: 100%;
+      max-width: 320px;
+      height: 200px;
+      background: #39ff14;
+      color: #111;
+      border: none;
+      border-radius: 24px;
+      font-size: 2rem;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.15em;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.1s;
+    }
+
+    #ping-btn:active {
+      transform: scale(0.96);
+      background: #2bcc0e;
+    }
+
+    #pong-feedback {
+      font-size: 1rem;
+      color: #555;
+      min-height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">Connecting...</div>
+  <div id="room-display"></div>
+  <button id="ping-btn">SEND PING</button>
+  <div id="pong-feedback"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/phone.js"></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ping-Pong Totem</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a1a;
+      color: #f0f0f0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 24px;
+    }
+
+    #status {
+      font-size: 1.5rem;
+      color: #888;
+      letter-spacing: 0.05em;
+    }
+
+    #status.connected {
+      color: #39ff14;
+    }
+
+    #qr-canvas {
+      border: 4px solid #333;
+      border-radius: 12px;
+      background: #fff;
+      padding: 16px;
+    }
+
+    #room-id {
+      font-size: 3rem;
+      font-weight: bold;
+      letter-spacing: 0.4em;
+      color: #f0f0f0;
+    }
+
+    #phone-url {
+      font-size: 0.85rem;
+      color: #555;
+      max-width: 600px;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    #latency-display {
+      font-size: 4rem;
+      font-weight: bold;
+      color: #39ff14;
+      min-height: 80px;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">Waiting for player...</div>
+  <canvas id="qr-canvas"></canvas>
+  <div id="room-id">------</div>
+  <div id="phone-url"></div>
+  <div id="latency-display"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/totem.js"></script>
+</body>
+</html>
