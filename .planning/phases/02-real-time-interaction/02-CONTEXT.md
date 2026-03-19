@@ -28,10 +28,21 @@ This phase does NOT include resilience logic (disconnection grace period, sessio
 - Visual: full-screen background flash from `#1a1a1a` → `#39ff14` for 200ms (mirrors the Totem flash)
 - The `#pong-feedback` div displays the RTT number (e.g. `42 ms`) — phone already has this value since it calculated it
 
-### Audio beep
-- **Web Audio API** — no static audio files needed
-- Generate a sine wave tone programmatically: ~880Hz frequency, ~80ms duration, with a quick exponential fade-out envelope
-- Plays concurrently with the Totem's color flash (triggered on the same event)
+### Audio — Sci-Fi Pulse (replaces simple beep)
+- **Web Audio API** — no static audio files needed, two simultaneous layers
+- **Layer 1 — Sub-Bass impact (dominant):**
+  - OscillatorNode type `sine`, starts at **~80Hz**, pitch drops to **~40Hz** over 150ms (scheduled via `frequency.exponentialRampToValueAtTime`)
+  - GainNode: starts at **1.0**, exponential decay to 0 over **150ms**
+  - Gives the pulse physical "weight" — the bass drop that you feel
+- **Layer 2 — Energy whiplash (texture):**
+  - OscillatorNode type `sawtooth` or `square` feeding a **BiquadFilterNode** (type: `bandpass`)
+  - Filter frequency sweeps **down from ~3kHz to ~1kHz** over **100ms** (`frequency.exponentialRampToValueAtTime`)
+  - Filter Q: moderate (~5-8) for a crystalline laser resonance
+  - GainNode: starts at **0.65** (sub-dominant), exponential decay to 0 over 150ms
+  - Gives the pulse its sci-fi laser / liquid crystal texture
+- **Timing:** both layers start simultaneously on the same frame
+- **Total duration:** ~150ms — short and impactful, does not interrupt game flow
+- Plays concurrently with the Totem's color flash (triggered on the same `server:ping` event)
 
 ### Button state during flight
 - Button is **disabled while awaiting pong** — disabled attribute set immediately after tap
