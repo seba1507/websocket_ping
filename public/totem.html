@@ -408,9 +408,12 @@
       if (clock) {
         sphereMaterial.uniforms.uTime.value = clock.getElapsedTime();
 
-        // Decaimiento del pulso
-        if (anomalyPulse > 0) { anomalyPulse -= 0.015; }
-        sphereMaterial.uniforms.uPulse.value = Math.max(0, anomalyPulse);
+        // Pulso sincronizado con la onda — time-based desde waveStartTime
+        if (waveActive || waveFading) {
+          sphereMaterial.uniforms.uPulse.value = Math.max(0, 1.0 - (now - waveStartTime) / 800);
+        } else {
+          sphereMaterial.uniforms.uPulse.value = 0;
+        }
 
         sphere.rotation.y += 0.002;
         sphere.rotation.x += 0.001;
