@@ -6,79 +6,249 @@
   <title>Ping-Pong Phone</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #1a1a1a;
-      color: #f0f0f0;
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #000;
       font-family: 'Courier New', monospace;
-      display: flex;
+      display: flex; align-items: center; justify-content: center;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      min-height: 100dvh;
-      gap: 20px;
-      padding: 20px;
-      text-align: center;
+      /* grid overlay */
+      background-image:
+        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+      background-size: 16px 16px;
     }
 
-    #status {
-      font-size: 1.2rem;
-      color: #888;
-      letter-spacing: 0.05em;
+    #connecting-screen {
+      font-size: 9px; letter-spacing: 0.15em;
+      color: rgba(255,255,255,0.08);
+      animation: blink-connect 2.4s ease-in-out infinite;
     }
+    @keyframes blink-connect { 0%,100% { opacity: 0.4; } 50% { opacity: 1.0; } }
 
-    #status.connected {
-      color: #39ff14;
-    }
-
-    #status.error {
-      color: #ff4444;
-    }
-
-    #room-display {
-      font-size: 1rem;
-      color: #555;
-      letter-spacing: 0.15em;
-    }
-
-    /* Phase 2 will make this the active ping button */
-    #ping-btn {
+    #error-screen {
       display: none;
-      width: 100%;
-      max-width: 320px;
-      height: 200px;
-      background: #39ff14;
-      color: #111;
-      border: none;
-      border-radius: 24px;
-      font-size: 2rem;
-      font-weight: bold;
-      font-family: 'Courier New', monospace;
-      letter-spacing: 0.15em;
+      font-size: 11px; color: #ff4444; text-align: center; padding: 20px;
+    }
+
+    #game-screen {
+      display: none;
+      flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+      width: 100%; height: 100%;
+      /* radial gradient overlay for connected state */
+      background: radial-gradient(ellipse 80% 50% at 50% 50%, rgba(5,12,55,0.35) 0%, transparent 65%);
+    }
+
+    #ping-btn {
+      position: relative; overflow: hidden;
+      width: 80vw; max-width: 360px; height: 110px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       cursor: pointer;
+      font-family: 'Courier New', monospace;
+      animation: chroma-pulse 3s ease-in-out infinite;
       transition: none;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    #ping-btn:active {
-      transform: scale(0.96);
-      background: #2bcc0e;
+    @keyframes chroma-pulse {
+      0%,100% {
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.02),
+                    inset 0 1px 0 rgba(255,255,255,0.05),
+                    -6px 0 16px rgba(255,0,60,0.05),
+                    6px 0 16px rgba(0,240,255,0.05);
+      }
+      50% {
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.04),
+                    inset 0 1px 0 rgba(255,255,255,0.08),
+                    -10px 0 24px rgba(255,0,60,0.12),
+                    10px 0 24px rgba(0,240,255,0.12);
+      }
     }
 
-    #pong-feedback {
-      font-size: 1rem;
-      color: #39ff14;
-      min-height: 24px;
+    #btn-label {
+      font-size: 12px; letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.65);
+      pointer-events: none;
+    }
+
+    #room-label {
+      font-size: 8px; color: #1a1a1a; letter-spacing: 0.1em;
+    }
+
+    #corner-br {
+      position: fixed; bottom: 14px; right: 16px;
+      font-size: 7px; color: rgba(255,255,255,0.3); letter-spacing: 0.1em;
+      display: none; /* shown in State 2 */
+      align-items: center; gap: 5px;
+    }
+    #corner-br .dot {
+      display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+      background: #00ff87; box-shadow: 0 0 6px #00ff87;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+    #corner-br .label { color: rgba(255,255,255,0.3); }
+
+    /* Ripple animation */
+    .ripple {
+      position: absolute; border-radius: 50%; pointer-events: none;
+      background: rgba(255,255,255,0.08);
+      animation: ripple-expand 400ms ease-out forwards;
+    }
+    @keyframes ripple-expand {
+      from { transform: scale(0); opacity: 1; }
+      to { transform: scale(4.5); opacity: 0; }
     }
   </style>
 </head>
 <body>
-  <div id="status">Connecting...</div>
-  <div id="room-display"></div>
-  <button id="ping-btn">SEND PING</button>
-  <div id="pong-feedback"></div>
-
+  <div id="connecting-screen">CONNECTING...</div>
+  <div id="error-screen"></div>
+  <div id="game-screen">
+    <button id="ping-btn"><span id="btn-label">SEND PING</span></button>
+    <div id="room-label"></div>
+  </div>
+  <div id="corner-br">
+    <span class="dot"></span>
+    <span class="label">CONNECTED</span>
+  </div>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/phone.js"></script>
+  <script>
+    // --- roomId from URL ---
+    const roomId = new URLSearchParams(window.location.search).get('room');
+    const connectScreen = document.getElementById('connecting-screen');
+    const errorScreen = document.getElementById('error-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const pingBtn = document.getElementById('ping-btn');
+    const btnLabel = document.getElementById('btn-label');
+    const roomLabel = document.getElementById('room-label');
+    const cornerBr = document.getElementById('corner-br');
+
+    let pingTimestamp = null;
+
+    if (!roomId) {
+      connectScreen.style.display = 'none';
+      errorScreen.style.display = 'block';
+      errorScreen.textContent = 'Error: No room ID in URL.';
+      // Terminal state — no socket init
+    } else {
+      const socket = io({ transports: ['websocket'] });
+
+      // On connect (and reconnect), join room
+      socket.on('connect', () => {
+        socket.emit('phone:join', { roomId });
+      });
+
+      // server:joined -> State 2
+      socket.on('server:joined', () => {
+        connectScreen.style.display = 'none';
+        errorScreen.style.display = 'none';
+        gameScreen.style.display = 'flex';
+        cornerBr.style.display = 'flex';
+        roomLabel.textContent = 'ROOM \u00B7 ' + roomId;
+      });
+
+      // server:error -> terminal
+      socket.on('server:error', ({ message }) => {
+        connectScreen.style.display = 'none';
+        gameScreen.style.display = 'none';
+        cornerBr.style.display = 'none';
+        errorScreen.style.display = 'block';
+        errorScreen.textContent = 'Error: ' + message;
+      });
+
+      // disconnect -> back to State 1
+      socket.on('disconnect', () => {
+        // Reset in-flight state if pending
+        if (pingBtn.disabled) {
+          pingTimestamp = null;
+          pingBtn.disabled = false;
+          pingBtn.style.opacity = '1';
+          pingBtn.style.pointerEvents = 'auto';
+        }
+        gameScreen.style.display = 'none';
+        cornerBr.style.display = 'none';
+        connectScreen.style.display = 'block';
+      });
+
+      // --- Press sequence ---
+      let ghostTimeout = null;
+
+      function handlePress(event) {
+        if (pingBtn.disabled) return;
+
+        // Store timestamp and disable
+        pingTimestamp = Date.now();
+        pingBtn.disabled = true;
+        pingBtn.style.pointerEvents = 'none';
+        socket.emit('phone:ping', { roomId });
+
+        // Step 1: Impact flash (0ms, 80ms)
+        pingBtn.style.transform = 'scale(0.96)';
+        pingBtn.style.background = 'rgba(255,255,255,0.10)';
+        setTimeout(() => {
+          pingBtn.style.transform = '';
+          pingBtn.style.background = 'rgba(255,255,255,0.04)';
+        }, 80);
+
+        // Step 2: Internal ripple (0ms, 400ms)
+        const rect = pingBtn.getBoundingClientRect();
+        let rippleX, rippleY;
+        if (event.clientX !== undefined && event.clientX !== 0) {
+          rippleX = event.clientX - rect.left;
+          rippleY = event.clientY - rect.top;
+        } else if (event.touches && event.touches.length > 0) {
+          rippleX = event.touches[0].clientX - rect.left;
+          rippleY = event.touches[0].clientY - rect.top;
+        } else {
+          rippleX = rect.width / 2;
+          rippleY = rect.height / 2;
+        }
+        const size = Math.max(rect.width, rect.height);
+        const ripple = document.createElement('div');
+        ripple.classList.add('ripple');
+        ripple.style.width = size + 'px';
+        ripple.style.height = size + 'px';
+        ripple.style.left = (rippleX - size / 2) + 'px';
+        ripple.style.top = (rippleY - size / 2) + 'px';
+        pingBtn.appendChild(ripple);
+        ripple.addEventListener('animationend', () => ripple.remove());
+
+        // Step 3: Chromatic ghost (60ms offset, 300ms duration)
+        setTimeout(() => {
+          btnLabel.style.textShadow = '2px 0 rgba(255,0,60,0.85), -2px 0 rgba(0,240,255,0.85)';
+          btnLabel.style.color = 'rgba(255,255,255,0.95)';
+          ghostTimeout = setTimeout(() => {
+            btnLabel.style.textShadow = '';
+            btnLabel.style.color = 'rgba(255,255,255,0.65)';
+            ghostTimeout = null;
+          }, 300);
+        }, 60);
+
+        // In-flight state
+        pingBtn.style.opacity = '0.3';
+      }
+
+      pingBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handlePress(e); }, { passive: false });
+      pingBtn.addEventListener('click', handlePress);
+
+      // --- server:pong handler ---
+      socket.on('server:pong', () => {
+        if (!pingTimestamp) return;
+        const latencyMs = Date.now() - pingTimestamp;
+        socket.emit('phone:latency', { roomId, latencyMs });
+        if (navigator.vibrate) navigator.vibrate(80);
+        // Re-enable button
+        pingBtn.disabled = false;
+        pingBtn.style.opacity = '1';
+        pingBtn.style.pointerEvents = 'auto';
+      });
+    }
+  </script>
 </body>
 </html>
