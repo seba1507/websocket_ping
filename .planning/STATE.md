@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-stopped_at: Phase 04 complete — post-checkpoint iterative UI tuning done
-last_updated: "2026-03-19"
+status: active
+stopped_at: Phase 05 complete — FSM + Three.js sphere + phone state-driven UI
+last_updated: "2026-03-20"
 progress:
-  total_phases: 4
-  completed_phases: 1
+  total_phases: 5
+  completed_phases: 4
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Provide an objective, brutally obvious, and instant measurement of network latency and connection resilience, ensuring the "magic" of the experience isn't broken by technical friction.
-**Current focus:** Phase 04 — ui-redesign
+**Current focus:** Phase 05 complete — idle (Phase 3 Connection Resilience pending)
 
 ## Current Position
 
-Phase: 04 (ui-redesign) — EXECUTING
-Plan: 2 of 2
+Phase: 05 (fsm-experience) — COMPLETE
+Next: Phase 03 (connection-resilience) — Not started
 
 ## Performance Metrics
 
@@ -68,6 +68,15 @@ Recent decisions affecting current work:
 - [Phase 04-ui-redesign P02]: Phone button is indigo-to-blue linear-gradient with neon-pulse (cyan↔magenta border), not flat glassmorphism
 - [Phase 04-ui-redesign P02]: Phone label "ENVIAR PULSO" 18px/700 — in-flight opacity:0.4; haptic vibrate([40,30,40]) double-pulse
 - [Phase 04-ui-redesign P02]: Press sequence: scale(0.92) + ripple at 0ms, chromatic ghost text-shadow at 60ms
+- [Phase 05-fsm-experience]: Totem FSM states: idle/locked/unlocked/active/result; transitions driven by server:ping; each state has label, message, sub text, glow color class, progress step
+- [Phase 05-fsm-experience]: Three.js icosahedron replaces Canvas 2D dormant blob; scale/rotation/bloom are state-driven (locked=small/dim → result=large/bright)
+- [Phase 05-fsm-experience]: waveStartTime shared between WebGL wave and Three.js pulse to keep them in sync
+- [Phase 05-fsm-experience]: Camera shake 0.12 on ping, decays × 0.85 per frame
+- [Phase 05-fsm-experience]: Audio removed by user decision (sounded bad); latency ms display removed by user decision
+- [Phase 05-fsm-experience]: Phone state tracked locally (phoneState var); advances on server:pong, not via socket relay — avoids race conditions
+- [Phase 05-fsm-experience]: Phone button CSS vars (--c1/--c2/--bg1/--bg2) updated per state; neon-pulse animation uses them; ghost effect restores state glow after animation
+- [Phase 05-fsm-experience]: totem:state event emitted by totem, relayed by server to phone room — secondary mechanism (phone primarily tracks state locally via pong)
+- [Phase 05-fsm-experience]: State color palette: locked=red(#ff3300/#ff0066), unlocked=green(#00ff88/#00ffcc), active=cyan/purple(#00f0ff/#aa00ff), result=gold(#ffdd00/#ff6600)
 
 ### Pending Todos
 
@@ -79,6 +88,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-19T19:15:09Z
-Stopped at: Paused at 04-02-PLAN.md checkpoint:human-verify (Task 3 — end-to-end verification)
+Last session: 2026-03-20
+Stopped at: Phase 05 complete — FSM, Three.js sphere, state-driven phone UI all working and committed
 Resume file: None
+Next action: Phase 03 (Connection Resilience) if needed, or further iterative tuning of Phase 05

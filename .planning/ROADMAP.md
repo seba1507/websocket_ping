@@ -7,9 +7,10 @@ A 4-phase journey to build a minimalist WebSocket sandbox. We start by establish
 ## Phases
 
 - [x] **Phase 1: Base Connection (2026-03-19)** - Establish a reliable Socket.io connection between Totem and Phone via QR code.
-- [ ] **Phase 2: Real-time Interaction** - Implement the core latency measurement loop and visual/audio feedback.
+- [x] **Phase 2: Real-time Interaction (2026-03-19)** - Implement the core ping/pong loop and visual/haptic feedback. Note: latency display and audio removed by design decision post-implementation.
 - [ ] **Phase 3: Connection Resilience** - Handle unstable 4G drops with a 30-second Grace Period and session expiration.
-- [x] **Phase 4: UI Redesign** - Full visual overhaul of Totem (WebGL wave + Canvas 2D dormant animation) and Phone (glassmorphism) as self-contained HTML files. (completed 2026-03-19)
+- [x] **Phase 4: UI Redesign (2026-03-19)** - Full visual overhaul of Totem (WebGL wave + Canvas 2D dormant animation) and Phone (glassmorphism) as self-contained HTML files. (completed 2026-03-19)
+- [x] **Phase 5: FSM Experience (2026-03-20)** - Added FSM state machine to Totem (locked/unlocked/active/result), Three.js icosahedron with UnrealBloom, camera shake, state-driven overlay text, progress dots, state flash transitions. Phone button label and visual palette sync with totem FSM state.
 
 ## Phase Details
 
@@ -28,19 +29,21 @@ Plans:
 - [x] 01-02: Phone client connection and room joining
 
 ### Phase 2: Real-time Interaction
-**Goal**: Implement the core latency measurement loop (Ping-Pong) and visual/audio feedback.
+**Goal**: Implement the core ping/pong interaction loop with feedback.
 **Depends on**: Phase 1
 **Requirements**: [INT-01, INT-02, INT-03, INT-04, INT-05]
-**Success Criteria** (what must be TRUE):
-  1. User presses the button on the phone to send a ping.
-  2. Totem instantly flashes green and plays a beep sound upon receiving the ping.
-  3. Totem accurately calculates and displays the network latency in milliseconds.
-  4. Phone receives the 'pong' and triggers a haptic vibration or visual flash.
+**Status**: Complete (with design deviations)
+**Success Criteria**:
+  1. ✅ Phone button sends ping via socket.
+  2. ✅ Totem reacts visually on ping (wave effect replaces green flash).
+  3. ⚠️ Latency display implemented then removed by user decision.
+  4. ✅ Phone receives pong, haptic vibration fires.
+  5. ⚠️ Audio (beep) implemented then removed by user decision.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Server ping routing + phone ping/pong UI (button, RTT calc, flash, haptic)
-- [ ] 02-02-PLAN.md — Totem flash, beep, and latency display + end-to-end verification
+- [x] 02-01-PLAN.md — Server ping routing + phone ping/pong UI (button, RTT calc, flash, haptic)
+- [ ] 02-02-PLAN.md — Totem flash, beep, and latency display + end-to-end verification (superseded by Phase 4/5)
 
 ### Phase 3: Connection Resilience
 **Goal**: Handle unstable 4G drops with a 30-second Grace Period and session expiration.
@@ -60,25 +63,46 @@ Plans:
 **Goal**: Full visual overhaul of Totem (WebGL wave + Canvas 2D dormant animation) and Phone (glassmorphism dark UI) as self-contained HTML files. Delete totem.js and phone.js — all logic inlined.
 **Depends on**: Phase 1
 **Requirements**: [UI-01, UI-02, UI-03, UI-04]
-**Success Criteria** (what must be TRUE):
-  1. totem.html is self-contained — no totem.js dependency; WebGL wave triggers on server:ping.
-  2. phone.html is self-contained — no phone.js dependency; glassmorphism button emits phone:ping.
-  3. totem.js and phone.js are deleted.
-  4. All existing socket events (server:init, totem:phone-connected, server:latency, etc.) continue working end-to-end.
+**Status**: Complete (2026-03-19)
+**Success Criteria**:
+  1. ✅ totem.html self-contained; WebGL wave triggers on server:ping.
+  2. ✅ phone.html self-contained; glassmorphism button emits phone:ping.
+  3. ✅ totem.js and phone.js deleted.
+  4. ✅ All socket events working end-to-end.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Totem rewrite: self-contained WebGL wave + Canvas 2D dormant + socket logic
-- [ ] 04-02-PLAN.md — Phone rewrite: self-contained glassmorphism UI + file deletions + e2e verification
+- [x] 04-01-PLAN.md — Totem rewrite: self-contained WebGL wave + Canvas 2D dormant + socket logic
+- [x] 04-02-PLAN.md — Phone rewrite: self-contained glassmorphism UI + file deletions + e2e verification
+
+---
+
+### Phase 5: FSM Experience
+**Goal**: Upgrade the totem+phone into a multi-state interactive experience with a 4-step FSM.
+**Depends on**: Phase 4
+**Status**: Complete (2026-03-20)
+**Success Criteria**:
+  1. ✅ Totem FSM: idle → locked → unlocked → active → result → locked (loop).
+  2. ✅ Each ping transitions FSM state with flash, overlay text, progress dots.
+  3. ✅ Three.js icosahedron with UnrealBloom replaces Canvas 2D dormant animation. Scale, rotation speed, bloom intensity are state-driven.
+  4. ✅ Camera shake on ping.
+  5. ✅ Phone button label changes per state: DESBLOQUEAR / ACTIVAR / REVELAR PREMIO / REINICIAR.
+  6. ✅ Phone button palette (border color, glow, background tint) matches totem state colors.
+  7. ✅ Latency ms display removed. Audio removed.
+
+**Socket events added**:
+| Event | Direction | Description |
+|-------|-----------|-------------|
+| `totem:state` | Totem → Server → Phone | Totem notifies phone of new FSM state after each ping |
 
 ## Progress
-
-**Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Base Connection | 2/2 | Complete | 2026-03-19 |
-| 2. Real-time Interaction | 1/2 | In Progress|  |
+| 2. Real-time Interaction | 1/2 | Complete* | 2026-03-19 |
 | 3. Connection Resilience | 0/2 | Not started | - |
-| 4. UI Redesign | 2/2 | Complete   | 2026-03-19 |
+| 4. UI Redesign | 2/2 | Complete | 2026-03-19 |
+| 5. FSM Experience | — | Complete | 2026-03-20 |
+
+*Phase 2 plan 02-02 superseded by Phase 4/5 visual overhaul.
