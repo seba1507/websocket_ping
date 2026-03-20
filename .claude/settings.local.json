@@ -10,7 +10,8 @@
       "Bash(cmd /c \"tasklist\")",
       "Bash(cmd /c \"wmic process where ProcessId=2536 get Name,ProcessId,CommandLine\")",
       "Bash(bash \"C:/Users/seba/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/seba/Documents/SEBA/DESARROLLOS/VARIOS SEBA/Web Sockets/pingpong\")",
-      "Bash(cat \"C:/Users/seba/Documents/SEBA/DESARROLLOS/VARIOS SEBA/Web Sockets/pingpong/.superpowers/brainstorm/\"*\"/.server-info\")"
+      "Bash(cat \"C:/Users/seba/Documents/SEBA/DESARROLLOS/VARIOS SEBA/Web Sockets/pingpong/.superpowers/brainstorm/\"*\"/.server-info\")",
+      "Bash(head -30 grep -n \"phone:ping\\\\|server:pong\\\\|phone:latency\\\\|server:ping\\\\|server:latency\" 'C:/Users/seba/Documents\\\\SEBA/DESARROLLOS/VARIOS SEBA/Web Sockets/pingpong/server.js')"
     ]
   }
 }

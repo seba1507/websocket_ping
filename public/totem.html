@@ -6,49 +6,383 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ping-Pong Totem</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #020202; font-family: 'Courier New', monospace; }
-
-    #webgl-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
-    #three-canvas {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none;
-      opacity: 0; transition: opacity 1s ease-in-out; mix-blend-mode: screen;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    #qr-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: transparent; }
-    #qr-screen #qr-canvas { border: 2px solid rgba(255, 255, 255, 0.05); border-radius: 8px; background: #fff; padding: 12px; }
-    #qr-screen #room-id { font-size: 2.5rem; font-weight: bold; letter-spacing: 0.4em; color: rgba(255, 255, 255, 0.75); }
-    #qr-screen #phone-url { font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); max-width: 500px; text-align: center; word-break: break-all; }
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #020202;
+      font-family: 'Courier New', monospace;
+    }
 
-    #overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; }
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+    }
+
+    #three-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      mix-blend-mode: screen;
+    }
+
+    #qr-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 26px;
+      background: transparent;
+    }
+
+    #qr-screen #qr-canvas {
+      border: 2px solid rgba(255, 255, 255, 1);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+    }
+
+    #qr-screen #room-id {
+      font-size: 2.5rem;
+      font-weight: bold;
+      letter-spacing: 0.4em;
+      color: rgba(255, 255, 255, 1);
+    }
+
+    #qr-screen #phone-url {
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 1);
+      max-width: 500px;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    /* ==========================================
+       FSM STATE OVERLAY — el protagonista nuevo
+    ========================================== */
+    /* ==========================================
+       FSM STATE OVERLAY — Estética Integrada y Premium
+    ========================================== */
+    #state-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 8;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.8rem;
+      /* Gradiente radial sutil para atenuar el brillo del centro y asegurar legibilidad absoluta */
+
+    }
+
+    /* Etiqueta de estado */
+    #state-label {
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.6em;
+      color: rgba(255, 255, 255, 0.9);
+      text-transform: uppercase;
+      transition: color 0.6s ease, opacity 0.4s ease, border-color 0.6s ease;
+      opacity: 0;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      /* Sombra oscura compacta para recortar contra la luz */
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 1), 0 0 10px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Mensaje principal — Núcleo blanco + Glow colorido (sobreescribe el JS inline con !important) */
+    #state-message {
+      font-family: system-ui, -apple-system, sans-serif;
+      /* Tipografía más moderna y limpia */
+      font-size: clamp(4rem, 9vw, 9rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      /* Texto más condensado e impactante */
+      text-align: center;
+      color: #ffffff !important;
+      /* Núcleo blanco siempre se ve más elegante */
+      line-height: 1.05;
+      transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 0;
+      max-width: 90vw;
+      text-transform: uppercase;
+      -webkit-text-stroke: 0;
+      /* Eliminamos el borde duro */
+    }
+
+    /* Sub - Estilo "pill" tech con glassmorphism */
+    #state-sub {
+      font-family: 'Courier New', monospace;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      color: #ffffff;
+      text-align: center;
+      transition: opacity 0.5s ease 0.1s, box-shadow 0.6s ease;
+      opacity: 0;
+      -webkit-text-stroke: 0;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+
+      /* Estética de etiqueta contenida */
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.8rem 1.8rem;
+      border-radius: 50px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Colores y Glows inyectados dinámicamente usando :has() para sobreescribir los estilos inline de JS */
+    #state-overlay:has(.state-glow-red) #state-message {
+      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9), 0 0 40px rgba(255, 60, 0, 0.8), 0 0 80px rgba(255, 60, 0, 0.4) !important;
+    }
+
+    #state-overlay:has(.state-glow-red) #state-label {
+      border-color: rgba(255, 60, 0, 0.5);
+    }
+
+    #state-overlay:has(.state-glow-red) #state-sub {
+      box-shadow: 0 0 20px rgba(255, 60, 0, 0.15);
+      border-color: rgba(255, 60, 0, 0.3);
+    }
+
+    #state-overlay:has(.state-glow-green) #state-message {
+      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9), 0 0 40px rgba(0, 255, 140, 0.8), 0 0 80px rgba(0, 255, 140, 0.4) !important;
+    }
+
+    #state-overlay:has(.state-glow-green) #state-label {
+      border-color: rgba(0, 255, 140, 0.5);
+    }
+
+    #state-overlay:has(.state-glow-green) #state-sub {
+      box-shadow: 0 0 20px rgba(0, 255, 140, 0.15);
+      border-color: rgba(0, 255, 140, 0.3);
+    }
+
+    #state-overlay:has(.state-glow-cyan) #state-message {
+      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9), 0 0 40px rgba(0, 240, 255, 0.8), 0 0 80px rgba(0, 240, 255, 0.4) !important;
+    }
+
+    #state-overlay:has(.state-glow-cyan) #state-label {
+      border-color: rgba(0, 240, 255, 0.5);
+    }
+
+    #state-overlay:has(.state-glow-cyan) #state-sub {
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+      border-color: rgba(0, 240, 255, 0.3);
+    }
+
+    #state-overlay:has(.state-glow-gold) #state-message {
+      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9), 0 0 40px rgba(255, 210, 0, 0.8), 0 0 80px rgba(255, 210, 0, 0.4) !important;
+    }
+
+    #state-overlay:has(.state-glow-gold) #state-label {
+      border-color: rgba(255, 210, 0, 0.5);
+    }
+
+    #state-overlay:has(.state-glow-gold) #state-sub {
+      box-shadow: 0 0 20px rgba(255, 210, 0, 0.15);
+      border-color: rgba(255, 210, 0, 0.3);
+    }
+
+    /* Animación de entrada estilo cine/premium */
+    @keyframes state-enter {
+      from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.98);
+        filter: blur(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
+    }
+
+    .state-animate {
+      animation: state-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+
+
+
+
+    .progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transition: background 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+    }
+
+    .progress-dot.done {
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .progress-dot.current {
+      background: #ffffff;
+      transform: scale(1.4);
+    }
+
+    /* Flash de transición de estado — cubre toda la pantalla */
+    #state-flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0;
+      background: #ffffff;
+    }
+
+    /* ==========================================
+       OVERLAY DE DIAGNÓSTICO (esquinas)
+    ========================================== */
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+      pointer-events: none;
+    }
 
     #latency-display {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      font-size: 7rem; /* Ligeramente más grande */
-      font-weight: bold; color: rgba(255, 255, 255, 0.95); letter-spacing: 0.05em;
-      text-shadow: 0 0 30px rgba(0,240,255,0.4), 0 4px 12px rgba(0,0,0,0.9);
-      opacity: 0; /* Oculto por defecto hasta el primer ping */
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 7rem;
+      font-weight: bold;
+      color: rgba(255, 255, 255, 0.95);
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 30px rgba(0, 240, 255, 0.4), 0 4px 12px rgba(0, 0, 0, 0.9);
+      opacity: 0;
     }
 
-    /* Animación de golpe épico para el texto */
     @keyframes epic-pop {
-      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; filter: blur(10px); }
-      40% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; filter: blur(0px); text-shadow: 10px 0 #ff003c, -10px 0 #00f0ff; }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff, 0 0 20px rgba(0,240,255,0.6); }
+      0% {
+        transform: translate(-50%, -50%) scale(0.3);
+        opacity: 0;
+        filter: blur(10px);
+      }
+
+      40% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+        filter: blur(0px);
+        text-shadow: 10px 0 #ff003c, -10px 0 #00f0ff;
+      }
+
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+        text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff, 0 0 20px rgba(0, 240, 255, 0.6);
+      }
     }
 
     .chroma-flash {
       animation: epic-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
     }
 
-    #corner-bl { position: absolute; bottom: 20px; left: 24px; font-size: 14px; color: rgba(255, 255, 255, 0.7); letter-spacing: 0.1em; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
-    #corner-br {
-      position: absolute; bottom: 24px; right: 28px; font-size: 1.5rem; font-weight: 700; color: rgba(255, 255, 255, 0.9);
-      letter-spacing: 0.15em; display: flex; align-items: center; gap: 14px; text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+    #corner-bl {
+      position: absolute;
+      bottom: 20px;
+      left: 24px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 0.1em;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
     }
-    #corner-br .dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #1a1a1a; }
-    #corner-br .dot.active { background: #00ff87; box-shadow: 0 0 12px #00ff87; animation: pulse-dot 2s ease-in-out infinite; }
-    @keyframes pulse-dot { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+    #corner-br {
+      position: absolute;
+      bottom: 24px;
+      right: 28px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.9);
+      letter-spacing: 0.15em;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+    }
+
+    #corner-br .dot {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #1a1a1a;
+    }
+
+    #corner-br .dot.active {
+      background: #00ff87;
+      box-shadow: 0 0 12px #00ff87;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        opacity: 0.7;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    /* Animación de entrada del texto de estado */
+    @keyframes state-enter {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .state-animate {
+      animation: state-enter 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
   </style>
 </head>
 
@@ -61,6 +395,24 @@
     <div id="room-id"></div>
     <div id="phone-url"></div>
   </div>
+
+  <!-- FSM State Overlay -->
+  <div id="state-overlay">
+    <div id="state-label"></div>
+    <div id="state-message"></div>
+    <div id="state-sub"></div>
+  </div>
+
+  <!-- Progress dots -->
+  <div id="state-progress">
+    <div class="progress-dot" data-step="0"></div>
+    <div class="progress-dot" data-step="1"></div>
+    <div class="progress-dot" data-step="2"></div>
+    <div class="progress-dot" data-step="3"></div>
+  </div>
+
+  <!-- Full-screen flash on state transition -->
+  <div id="state-flash"></div>
 
   <div id="overlay">
     <div id="latency-display"></div>
@@ -89,6 +441,194 @@
     import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
     import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
     import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+    // ==========================================
+    // 0. FSM — MÁQUINA DE ESTADOS
+    // ==========================================
+
+    /**
+     * Secuencia de estados para el reel:
+     *
+     *  idle     → (phone connects) → locked
+     *  locked   → (ping)           → unlocked
+     *  unlocked → (ping)           → active
+     *  active   → (ping)           → result
+     *  result   → (phone disconnects / timeout) → idle (new QR)
+     *
+     * Cada estado define:
+     *  - label:   etiqueta discreta arriba
+     *  - message: texto grande, la "decisión"
+     *  - sub:     instrucción contextual
+     *  - colors:  [glow, peak] para la anomalía Three.js
+     *  - flashColor: color del flash de transición
+     *  - progressStep: qué dot está activo
+     */
+    const FSM = {
+      idle: {
+        label: '',
+        message: '',
+        sub: '',
+        colors: ['#00ffff', '#ff00cc'],
+        flashColor: '#ffffff',
+        progressStep: -1,
+        glowClass: 'state-glow-cyan',
+      },
+      locked: {
+        label: 'ESTADO 01 / 03',
+        message: 'CONTENIDO\nBLOQUEADO',
+        sub: 'PRESIONA PARA DESBLOQUEAR',
+        colors: ['#ff3300', '#ff0066'],
+        flashColor: '#ff2200',
+        progressStep: 0,
+        glowClass: 'state-glow-red',
+      },
+      unlocked: {
+        label: 'ESTADO 02 / 03',
+        message: 'ACCESO\nCONCEDIDO',
+        sub: 'PRESIONA PARA ACTIVAR',
+        colors: ['#00ff88', '#00ffcc'],
+        flashColor: '#00ff88',
+        progressStep: 1,
+        glowClass: 'state-glow-green',
+      },
+      active: {
+        label: 'ESTADO 03 / 03',
+        message: 'EXPERIENCIA\nACTIVA',
+        sub: 'PRESIONA PARA REVELAR PREMIO',
+        colors: ['#00f0ff', '#aa00ff'],
+        flashColor: '#4400ff',
+        progressStep: 2,
+        glowClass: 'state-glow-cyan',
+      },
+      result: {
+        label: 'FIN DE SESIÓN',
+        message: '¡PREMIO\nREVELADO!',
+        sub: '',
+        colors: ['#ffdd00', '#ff6600'],
+        flashColor: '#ffdd00',
+        progressStep: 3,
+        glowClass: 'state-glow-gold',
+      },
+    };
+
+    // Secuencia de transiciones al recibir ping
+    const TRANSITIONS = {
+      locked: 'unlocked',
+      unlocked: 'active',
+      active: 'result',
+      result: 'locked', // loop para el reel — vuelve al inicio
+    };
+
+    let currentState = 'idle';
+
+    // Referencias DOM para el overlay de estado
+    const stateLabel = document.getElementById('state-label');
+    const stateMessage = document.getElementById('state-message');
+    const stateSub = document.getElementById('state-sub');
+    const stateProgress = document.getElementById('state-progress');
+    const stateFlash = document.getElementById('state-flash');
+    const progressDots = document.querySelectorAll('.progress-dot');
+
+    /**
+     * Aplica un estado a la UI del tótem.
+     * triggerFlash: si true, hace el flash de transición primero.
+     */
+    function applyState(stateName, triggerFlash = false) {
+      const state = FSM[stateName];
+      if (!state) return;
+      currentState = stateName;
+
+      const doRender = () => {
+        // Colores de la anomalía
+        if (sphereMaterial) {
+          sphereMaterial.uniforms.uColorGlow.value.set(state.colors[0]);
+          sphereMaterial.uniforms.uColorPeak.value.set(state.colors[1]);
+        }
+
+        // Limpiar latency si el estado no lo muestra
+        if (currentState !== 'unlocked' && currentState !== 'active') {
+          const latEl = document.getElementById('latency-display');
+          latEl.style.opacity = '0';
+          if (chromaFlashTimeout) { clearTimeout(chromaFlashTimeout); latEl.classList.remove('chroma-flash'); chromaFlashTimeout = null; }
+        }
+
+        // Overlay de estado
+        if (state.message) {
+          stateLabel.style.opacity = '0';
+          stateMessage.style.opacity = '0';
+          stateSub.style.opacity = '0';
+
+          requestAnimationFrame(() => {
+            // Soporta saltos de línea con \n
+            stateLabel.textContent = state.label;
+            stateMessage.innerHTML = state.message.replace(/\n/g, '<br>');
+            stateSub.textContent = state.sub;
+
+            // Glow color del estado
+            const glowClasses = ['state-glow-red', 'state-glow-green', 'state-glow-cyan', 'state-glow-gold'];
+            stateLabel.classList.remove(...glowClasses);
+            stateSub.classList.remove(...glowClasses);
+            if (state.glowClass) {
+              stateLabel.classList.add(state.glowClass);
+              stateSub.classList.add(state.glowClass);
+            }
+
+            // state-message: color del estado + stroke negro para leer sobre bloom
+            const msgColors = {
+              'state-glow-red': { color: '#ff6633', shadow: '0 0 40px rgba(255,60,0,1), 0 0 80px rgba(255,60,0,0.6), 0 0 120px rgba(255,60,0,0.3)' },
+              'state-glow-green': { color: '#00ffaa', shadow: '0 0 40px rgba(0,255,140,1), 0 0 80px rgba(0,255,140,0.6), 0 0 120px rgba(0,255,140,0.3)' },
+              'state-glow-cyan': { color: '#00eeff', shadow: '0 0 40px rgba(0,240,255,1), 0 0 80px rgba(0,240,255,0.6), 0 0 120px rgba(0,240,255,0.3)' },
+              'state-glow-gold': { color: '#ffdd00', shadow: '0 0 40px rgba(255,210,0,1), 0 0 80px rgba(255,210,0,0.6), 0 0 120px rgba(255,210,0,0.3)' },
+            };
+            const mc = msgColors[state.glowClass];
+            if (mc) {
+              stateMessage.style.color = mc.color;
+              stateMessage.style.textShadow = mc.shadow;
+            }
+
+            stateLabel.classList.remove('state-animate');
+            stateMessage.classList.remove('state-animate');
+            stateSub.classList.remove('state-animate');
+            void stateLabel.offsetWidth; // reflow
+
+            stateLabel.classList.add('state-animate');
+            stateMessage.classList.add('state-animate');
+            stateSub.classList.add('state-animate');
+
+            stateLabel.style.opacity = '1';
+            stateMessage.style.opacity = '1';
+            stateSub.style.opacity = '1';
+          });
+
+          // Barra de progreso
+          stateProgress.style.opacity = '1';
+          progressDots.forEach((dot, i) => {
+            dot.classList.remove('done', 'current');
+            if (i < state.progressStep) dot.classList.add('done');
+            if (i === state.progressStep) dot.classList.add('current');
+          });
+        } else {
+          // Estado idle: ocultar todo
+          stateLabel.style.opacity = '0';
+          stateMessage.style.opacity = '0';
+          stateSub.style.opacity = '0';
+          stateProgress.style.opacity = '0';
+        }
+      };
+
+      if (triggerFlash) {
+        // Flash de color de estado
+        stateFlash.style.background = state.flashColor;
+        stateFlash.style.transition = 'none';
+        stateFlash.style.opacity = '0.55';
+        void stateFlash.offsetWidth;
+        stateFlash.style.transition = 'opacity 350ms ease-out';
+        stateFlash.style.opacity = '0';
+        setTimeout(doRender, 80);
+      } else {
+        doRender();
+      }
+    }
 
     // ==========================================
     // 1. SISTEMA RAW WEBGL (ONDA DE FONDO)
@@ -170,13 +710,18 @@
     gl.enableVertexAttribArray(aPosLoc); gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 0, 0);
 
     const loc = {
-      u_res: gl.getUniformLocation(program, 'u_res'), u_time: gl.getUniformLocation(program, 'u_time'),
-      u_wave: gl.getUniformLocation(program, 'u_wave'), u_strength: gl.getUniformLocation(program, 'u_strength'),
-      u_origin: gl.getUniformLocation(program, 'u_origin'), u_bgBlend: gl.getUniformLocation(program, 'u_bgBlend'),
+      u_res: gl.getUniformLocation(program, 'u_res'),
+      u_time: gl.getUniformLocation(program, 'u_time'),
+      u_wave: gl.getUniformLocation(program, 'u_wave'),
+      u_strength: gl.getUniformLocation(program, 'u_strength'),
+      u_origin: gl.getUniformLocation(program, 'u_origin'),
+      u_bgBlend: gl.getUniformLocation(program, 'u_bgBlend'),
     };
 
-    gl.uniform2f(loc.u_res, webglCanvas.width, webglCanvas.height); gl.uniform2f(loc.u_origin, 0.5, 0.5);
-    let waveActive = false, waveFading = false, waveFadeStart = 0, waveStartTime = 0, currentWave = 0.0, currentStrength = 0.0, bgBlend = 0.0;
+    gl.uniform2f(loc.u_res, webglCanvas.width, webglCanvas.height);
+    gl.uniform2f(loc.u_origin, 0.5, 0.5);
+    let waveActive = false, waveFading = false, waveFadeStart = 0, waveStartTime = 0;
+    let currentWave = 0.0, currentStrength = 0.0, bgBlend = 0.0;
 
 
     // ==========================================
@@ -185,10 +730,8 @@
     const threeCanvas = document.getElementById('three-canvas');
     let scene, camera, renderer, composer, clock;
     let sphere, sphereMaterial;
-    let bloomPass; // Globalizamos el bloom pass para poder inyectarle energía
-
-    let anomalyPulse = 0;
-    let cameraShake = 0; // Nueva variable de epicidad
+    let bloomPass;
+    let cameraShake = 0;
 
     function initThreeJS() {
       scene = new THREE.Scene();
@@ -202,10 +745,8 @@
       renderer.setClearColor(0x000000, 1);
 
       const renderScene = new RenderPass(scene, camera);
-      // Base bloom moderado
       bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 0.2, 0.4);
       const outputPass = new OutputPass();
-
       composer = new EffectComposer(renderer);
       composer.addPass(renderScene);
       composer.addPass(bloomPass);
@@ -217,56 +758,60 @@
           uTime: { value: 0 },
           uPulse: { value: 0 },
           uColorGlow: { value: new THREE.Color(0x00ffff) },
-          uColorPeak: { value: new THREE.Color(0xff00cc) }
+          uColorPeak: { value: new THREE.Color(0xff00cc) },
         },
         vertexShader: `
-          uniform float uTime; uniform float uPulse; varying vec3 vNormal; varying vec3 vPosition; varying float vNoise;
-          vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; } vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-          vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); } vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-          float snoise(vec3 v) {
-            const vec2 C = vec2(1.0/6.0, 1.0/3.0); const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-            vec3 i  = floor(v + dot(v, C.yyy)); vec3 x0 = v - i + dot(i, C.xxx);
-            vec3 g = step(x0.yzx, x0.xyz); vec3 l = 1.0 - g; vec3 i1 = min(g.xyz, l.zxy); vec3 i2 = max(g.xyz, l.zxy);
-            vec3 x1 = x0 - i1 + C.xxx; vec3 x2 = x0 - i2 + C.yyy; vec3 x3 = x0 - D.yyy; i = mod289(i);
-            vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-            float n_ = 0.142857142857; vec3 ns = n_ * D.wyz - D.xzx; vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-            vec4 x_ = floor(j * ns.z); vec4 y_ = floor(j - 7.0 * x_); vec4 x = x_ *ns.x + ns.yyyy; vec4 y = y_ *ns.x + ns.yyyy;
-            vec4 h = 1.0 - abs(x) - abs(y); vec4 b0 = vec4(x.xy, y.xy); vec4 b1 = vec4(x.zw, y.zw);
-            vec4 s0 = floor(b0)*2.0 + 1.0; vec4 s1 = floor(b1)*2.0 + 1.0; vec4 sh = -step(h, vec4(0.0));
-            vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy; vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
-            vec3 p0 = vec3(a0.xy,h.x); vec3 p1 = vec3(a0.zw,h.y); vec3 p2 = vec3(a1.xy,h.z); vec3 p3 = vec3(a1.zw,h.w);
-            vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-            p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w; vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-            m = m * m; return 105.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+          uniform float uTime; uniform float uPulse;
+          varying vec3 vNormal; varying vec3 vPosition; varying float vNoise;
+          vec3 mod289(vec3 x){return x-floor(x*(1./289.))*289.;}
+          vec4 mod289(vec4 x){return x-floor(x*(1./289.))*289.;}
+          vec4 permute(vec4 x){return mod289(((x*34.)+1.)*x);}
+          vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+          float snoise(vec3 v){
+            const vec2 C=vec2(1./6.,1./3.);const vec4 D=vec4(0.,.5,1.,2.);
+            vec3 i=floor(v+dot(v,C.yyy));vec3 x0=v-i+dot(i,C.xxx);
+            vec3 g=step(x0.yzx,x0.xyz);vec3 l=1.-g;
+            vec3 i1=min(g.xyz,l.zxy);vec3 i2=max(g.xyz,l.zxy);
+            vec3 x1=x0-i1+C.xxx;vec3 x2=x0-i2+C.yyy;vec3 x3=x0-D.yyy;
+            i=mod289(i);
+            vec4 p=permute(permute(permute(i.z+vec4(0.,i1.z,i2.z,1.))+i.y+vec4(0.,i1.y,i2.y,1.))+i.x+vec4(0.,i1.x,i2.x,1.));
+            float n_=0.142857142857;vec3 ns=n_*D.wyz-D.xzx;
+            vec4 j=p-49.*floor(p*ns.z*ns.z);
+            vec4 x_=floor(j*ns.z);vec4 y_=floor(j-7.*x_);
+            vec4 x=x_*ns.x+ns.yyyy;vec4 y=y_*ns.x+ns.yyyy;
+            vec4 h=1.-abs(x)-abs(y);vec4 b0=vec4(x.xy,y.xy);vec4 b1=vec4(x.zw,y.zw);
+            vec4 s0=floor(b0)*2.+1.;vec4 s1=floor(b1)*2.+1.;vec4 sh=-step(h,vec4(0.));
+            vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+            vec3 p0=vec3(a0.xy,h.x);vec3 p1=vec3(a0.zw,h.y);vec3 p2=vec3(a1.xy,h.z);vec3 p3=vec3(a1.zw,h.w);
+            vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+            p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;
+            vec4 m=max(.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.);
+            m=m*m;return 105.*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
           }
-          void main() {
-            vNormal = normal; vPosition = position;
-            float lowFreq = snoise(position * 1.5 + uTime * 0.2);
-            float highFreq = snoise(position * 8.0 - uTime * 0.4) * 0.1;
-            vNoise = lowFreq + highFreq;
-            // Explosión de volumen extrema
-            float displacement = vNoise * (0.3 + uPulse * 1.2);
-            vec3 newPos = position + normal * displacement;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
+          void main(){
+            vNormal=normal;vPosition=position;
+            float lowFreq=snoise(position*1.5+uTime*0.2);
+            float highFreq=snoise(position*8.-uTime*0.4)*0.1;
+            vNoise=lowFreq+highFreq;
+            float displacement=vNoise*(0.3+uPulse*1.2);
+            vec3 newPos=position+normal*displacement;
+            gl_Position=projectionMatrix*modelViewMatrix*vec4(newPos,1.);
           }
         `,
         fragmentShader: `
           uniform vec3 uColorGlow; uniform vec3 uColorPeak; uniform float uPulse;
           varying vec3 vNormal; varying vec3 vPosition; varying float vNoise;
-          void main() {
-            vec3 viewDir = normalize(cameraPosition - vPosition);
-            float fresnel = pow(1.0 - dot(viewDir, vNormal), 3.0);
-            vec3 color = mix(uColorGlow, uColorPeak, smoothstep(-0.2, 0.5, vNoise));
-
-            // Núcleo blanco caliente durante el impacto (contenido)
-            vec3 coreHeat = vec3(0.4) * uPulse;
-            color += uColorGlow * fresnel * (0.3 + uPulse * 1.2) + coreHeat;
-
-            float alpha = mix(0.15, 1.0, fresnel);
-            gl_FragColor = vec4(color, alpha);
+          void main(){
+            vec3 viewDir=normalize(cameraPosition-vPosition);
+            float fresnel=pow(1.-dot(viewDir,vNormal),3.);
+            vec3 color=mix(uColorGlow,uColorPeak,smoothstep(-0.2,0.5,vNoise));
+            vec3 coreHeat=vec3(0.4)*uPulse;
+            color+=uColorGlow*fresnel*(0.3+uPulse*1.2)+coreHeat;
+            float alpha=mix(0.15,1.,fresnel);
+            gl_FragColor=vec4(color,alpha);
           }
         `,
-        transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+        transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
       });
 
       sphere = new THREE.Mesh(geometry, sphereMaterial);
@@ -277,10 +822,9 @@
 
 
     // ==========================================
-    // 3. RENDER LOOP UNIFICADO (EPIC UPGRADE)
+    // 3. RENDER LOOP
     // ==========================================
     function renderAll(now) {
-      // -- WebGL Background --
       const t = now * 0.001;
       gl.uniform1f(loc.u_time, t);
 
@@ -288,45 +832,72 @@
         currentWave = Math.min(((now - waveStartTime) / 2000.0) * 1.6, 1.6);
         currentStrength = Math.exp(-Math.pow((currentWave - 0.35) / 0.2, 2.0));
         bgBlend = 1.0;
-        if (currentWave >= 1.6) {
-          waveActive = false; waveFading = true; waveFadeStart = now;
-        }
+        if (currentWave >= 1.6) { waveActive = false; waveFading = true; waveFadeStart = now; }
       } else if (waveFading) {
         bgBlend = Math.max(0, 1.0 - (now - waveFadeStart) / 1000.0);
         if (bgBlend <= 0) { waveFading = false; bgBlend = 0; currentWave = 0.0; currentStrength = 0.0; }
       }
-      gl.uniform1f(loc.u_wave, currentWave); gl.uniform1f(loc.u_strength, currentStrength); gl.uniform1f(loc.u_bgBlend, bgBlend);
+      gl.uniform1f(loc.u_wave, currentWave);
+      gl.uniform1f(loc.u_strength, currentStrength);
+      gl.uniform1f(loc.u_bgBlend, bgBlend);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-      // -- Three.js Anomaly --
       if (clock) {
         sphereMaterial.uniforms.uTime.value = clock.getElapsedTime();
 
-        // CAMERA SHAKE
         if (cameraShake > 0) {
           camera.position.x = (Math.random() - 0.5) * cameraShake;
           camera.position.y = (Math.random() - 0.5) * cameraShake;
-          cameraShake *= 0.85; // Fricción del temblor
-          if (cameraShake < 0.001) {
-            camera.position.x = 0; camera.position.y = 0; cameraShake = 0;
-          }
+          cameraShake *= 0.85;
+          if (cameraShake < 0.001) { camera.position.x = 0; camera.position.y = 0; cameraShake = 0; }
         }
 
-        // Pulso sincronizado con la onda — mismo waveStartTime
         const currentPulse = (waveActive || waveFading)
           ? Math.max(0, 1.0 - (now - waveStartTime) / 800)
           : 0;
         sphereMaterial.uniforms.uPulse.value = currentPulse;
 
-        // Bloom fijo — la onda es el protagonista del impacto
-        bloomPass.strength = 0.2;
+        // --- STATE-DRIVEN render params ---
+        // Base values per state (persistent, not just on transition)
+        let baseScale, baseRotY, baseRotX, baseBloom;
+        switch (currentState) {
+          case 'locked':
+            baseScale = 0.18;   // pequeña, contenida, inaccesible
+            baseRotY = 0.0008;
+            baseRotX = 0.0004;
+            baseBloom = 0.1;
+            break;
+          case 'unlocked':
+            baseScale = 0.28;   // crece — algo se reveló
+            baseRotY = 0.004;
+            baseRotX = 0.002;
+            baseBloom = 0.6;
+            break;
+          case 'active':
+            baseScale = 0.38;   // más grande, más energía
+            baseRotY = 0.010;
+            baseRotX = 0.005;
+            baseBloom = 1.2;
+            break;
+          case 'result':
+            baseScale = 0.55;   // domina la pantalla
+            baseRotY = 0.020;
+            baseRotX = 0.010;
+            baseBloom = 2.2;
+            break;
+          default: // idle
+            baseScale = 0.25;
+            baseRotY = 0.002;
+            baseRotX = 0.001;
+            baseBloom = 0.2;
+        }
 
-        // Rotación sutil, sin escalar al impacto
-        sphere.rotation.y += 0.002 + (currentPulse * 0.04);
-        sphere.rotation.x += 0.001 + (currentPulse * 0.02);
-
-        sphere.scale.set(0.25, 0.25, 0.25);
-
+        // Pulse añade energía sobre la base del estado
+        const pulseScale = baseScale + currentPulse * 0.18;
+        bloomPass.strength = baseBloom + currentPulse * 0.8;
+        sphere.rotation.y += baseRotY + currentPulse * 0.04;
+        sphere.rotation.x += baseRotX + currentPulse * 0.02;
+        sphere.scale.set(pulseScale, pulseScale, pulseScale);
         composer.render();
       }
       requestAnimationFrame(renderAll);
@@ -335,54 +906,27 @@
 
     window.addEventListener('resize', () => {
       webglCanvas.width = window.innerWidth; webglCanvas.height = window.innerHeight;
-      gl.viewport(0, 0, webglCanvas.width, webglCanvas.height); gl.uniform2f(loc.u_res, webglCanvas.width, webglCanvas.height);
+      gl.viewport(0, 0, webglCanvas.width, webglCanvas.height);
+      gl.uniform2f(loc.u_res, webglCanvas.width, webglCanvas.height);
       camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
     });
 
+
+
+
+
     // ==========================================
-    // 4. LÓGICA DE SOCKETS Y AUDIO
+    // 5. SOCKETS + FSM DISPATCH
     // ==========================================
-    let audioCtx = null;
-    function playBeep() {
-      try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const t = audioCtx.currentTime;
-
-        const osc1 = audioCtx.createOscillator();
-        const gain1 = audioCtx.createGain();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(80, t);
-        osc1.frequency.exponentialRampToValueAtTime(40, t + 0.15);
-        gain1.gain.setValueAtTime(1.0, t);
-        gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-        osc1.connect(gain1); gain1.connect(audioCtx.destination);
-        osc1.start(t); osc1.stop(t + 0.15);
-
-        const osc2 = audioCtx.createOscillator();
-        const filter = audioCtx.createBiquadFilter();
-        const gain2 = audioCtx.createGain();
-        osc2.type = 'sawtooth';
-        osc2.frequency.setValueAtTime(440, t);
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(3000, t);
-        filter.frequency.exponentialRampToValueAtTime(1000, t + 0.1);
-        filter.Q.setValueAtTime(6, t);
-        gain2.gain.setValueAtTime(0.65, t);
-        gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-        osc2.connect(filter); filter.connect(gain2); gain2.connect(audioCtx.destination);
-        osc2.start(t); osc2.stop(t + 0.15);
-      } catch (e) { }
-    }
-
     const socket = window.io({ transports: ['websocket'] });
     let chromaFlashTimeout = null;
 
     socket.on('connect', () => { socket.emit('totem:ready'); });
 
     socket.on('server:init', ({ roomId, phoneUrl }) => {
-      QRCode.toCanvas(document.getElementById('qr-canvas'), phoneUrl, { width: 200, margin: 2 });
+      QRCode.toCanvas(document.getElementById('qr-canvas'), phoneUrl, { width: 400, margin: 2 });
       document.getElementById('room-id').textContent = roomId;
       document.getElementById('phone-url').textContent = phoneUrl;
       document.getElementById('corner-bl').textContent = 'ROOM · ' + roomId;
@@ -391,18 +935,22 @@
     socket.on('totem:phone-connected', () => {
       document.getElementById('qr-screen').style.display = 'none';
       threeCanvas.style.opacity = '1';
-      const dot = document.querySelector('#corner-br .dot');
-      dot.classList.add('active');
+      document.querySelector('#corner-br .dot').classList.add('active');
       document.querySelector('#corner-br .label').textContent = 'CONNECTED';
+
+      // Entrar al primer estado: LOCKED
+      applyState('locked', false);
     });
 
     socket.on('phone:disconnected', () => {
       document.getElementById('qr-screen').style.display = 'flex';
       threeCanvas.style.opacity = '0';
-      const dot = document.querySelector('#corner-br .dot');
-      dot.classList.remove('active');
+      document.querySelector('#corner-br .dot').classList.remove('active');
       document.querySelector('#corner-br .label').textContent = 'WAITING';
-      waveActive = false; waveFading = false; bgBlend = 0.0; currentWave = 0.0; currentStrength = 0.0; gl.uniform1f(loc.u_bgBlend, 0.0);
+      waveActive = false; waveFading = false; bgBlend = 0.0;
+      currentWave = 0.0; currentStrength = 0.0;
+      gl.uniform1f(loc.u_bgBlend, 0.0);
+      applyState('idle');
     });
 
     socket.on('server:ping', () => {
@@ -411,24 +959,28 @@
       waveStartTime = performance.now();
       waveActive = true; waveFading = false;
 
-      // 2. Detonamos la reacción épica
+      // 2. Shake
       cameraShake = 0.12;
 
-      playBeep();
+      // 3. FSM: transición de estado
+      const nextState = TRANSITIONS[currentState];
+      if (nextState) {
+        applyState(nextState, true);
+      }
     });
 
     socket.on('server:latency', ({ latencyMs }) => {
+      // Solo mostrar latencia en estados donde tiene sentido semántico
+      if (currentState !== 'unlocked' && currentState !== 'active') return;
+
       const el = document.getElementById('latency-display');
       el.innerHTML = latencyMs + '<span style="font-size:3rem;opacity:0.6;margin-left:0.1em;letter-spacing:0.05em">ms</span>';
-
-      // Reiniciamos la animación CSS con un truco de reflow
       if (chromaFlashTimeout) { clearTimeout(chromaFlashTimeout); el.classList.remove('chroma-flash'); }
       void el.offsetWidth;
-
-      // Aplicamos el golpe tipográfico
       el.classList.add('chroma-flash');
       chromaFlashTimeout = setTimeout(() => { el.classList.remove('chroma-flash'); chromaFlashTimeout = null; }, 400);
     });
+
   </script>
 </body>
 
