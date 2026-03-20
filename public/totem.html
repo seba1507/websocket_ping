@@ -966,20 +966,11 @@
       const nextState = TRANSITIONS[currentState];
       if (nextState) {
         applyState(nextState, true);
+        socket.emit('totem:state', { state: nextState });
       }
     });
 
-    socket.on('server:latency', ({ latencyMs }) => {
-      // Solo mostrar latencia en estados donde tiene sentido semántico
-      if (currentState !== 'unlocked' && currentState !== 'active') return;
-
-      const el = document.getElementById('latency-display');
-      el.innerHTML = latencyMs + '<span style="font-size:3rem;opacity:0.6;margin-left:0.1em;letter-spacing:0.05em">ms</span>';
-      if (chromaFlashTimeout) { clearTimeout(chromaFlashTimeout); el.classList.remove('chroma-flash'); }
-      void el.offsetWidth;
-      el.classList.add('chroma-flash');
-      chromaFlashTimeout = setTimeout(() => { el.classList.remove('chroma-flash'); chromaFlashTimeout = null; }, 400);
-    });
+    socket.on('server:latency', () => {});
 
   </script>
 </body>

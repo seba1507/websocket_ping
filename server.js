@@ -102,6 +102,11 @@ io.on('connection', (socket) => {
     socket.emit('server:pong', {});
   });
 
+  // Totem reports state change — relay to phone
+  socket.on('totem:state', ({ state }) => {
+    io.to(roomId).except(socket.id).emit('totem:state', { state });
+  });
+
   // Phone reports calculated RTT — forward to room (Totem)
   socket.on('phone:latency', ({ roomId, latencyMs }) => {
     console.log(`Latency reported: ${latencyMs}ms in room ${roomId}`);

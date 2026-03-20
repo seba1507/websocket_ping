@@ -66,6 +66,11 @@
     }
 
     #ping-btn {
+      --c1: #ff3300;
+      --c2: #ff0066;
+      --bg1: rgba(60, 5, 5, 0.85);
+      --bg2: rgba(40, 0, 20, 0.85);
+
       position: relative;
       overflow: hidden;
       width: 80vw;
@@ -73,8 +78,7 @@
       height: 120px;
       border-radius: 24px;
 
-      /* NUEVO FONDO: Degradado profundo (Índigo a Azul Oscuro) con efecto cristal */
-      background: linear-gradient(135deg, rgba(40, 10, 70, 0.85) 0%, rgba(10, 30, 80, 0.85) 100%);
+      background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
 
@@ -82,39 +86,35 @@
       cursor: pointer;
       font-family: 'Courier New', monospace;
       animation: neon-pulse 3s ease-in-out infinite;
-      transition: transform 0.1s ease-out, opacity 0.2s;
+      transition: transform 0.1s ease-out, opacity 0.2s, background 0.6s ease;
       outline: none;
       -webkit-tap-highlight-color: transparent;
 
-      /* Sombra extra para despegar el botón del fondo */
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
     }
 
-    /* El botón respira entre Cyan y Magenta, sincronizado con la anomalía */
     @keyframes neon-pulse {
 
       0%,
       100% {
-        border-color: rgba(0, 240, 255, 0.8);
-        box-shadow: 0 0 20px rgba(0, 240, 255, 0.4), inset 0 0 10px rgba(0, 240, 255, 0.2);
+        border-color: var(--c1);
+        box-shadow: 0 0 24px var(--c1), inset 0 0 12px color-mix(in srgb, var(--c1) 30%, transparent);
       }
 
       50% {
-        border-color: rgba(255, 0, 204, 0.8);
-        box-shadow: 0 0 20px rgba(255, 0, 204, 0.4), inset 0 0 10px rgba(255, 0, 204, 0.2);
+        border-color: var(--c2);
+        box-shadow: 0 0 24px var(--c2), inset 0 0 12px color-mix(in srgb, var(--c2) 30%, transparent);
       }
     }
 
     #btn-label {
       font-size: 18px;
-      /* Texto más grande */
       font-weight: 700;
       letter-spacing: 0.2em;
       color: #ffffff;
-      /* Blanco puro para contraste total */
       text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
       pointer-events: none;
-      transition: all 0.2s;
+      transition: text-shadow 0.5s ease, color 0.5s ease;
     }
 
     #room-label {
@@ -223,12 +223,52 @@
         socket.emit('phone:join', { roomId });
       });
 
+      const STATE_LABELS = {
+        locked:   'DESBLOQUEAR',
+        unlocked: 'ACTIVAR',
+        active:   'REVELAR PREMIO',
+        result:   'REINICIAR',
+      };
+
+      const STATE_STYLES = {
+        locked:   { c1: '#ff3300', c2: '#ff0066', bg1: 'rgba(60,5,5,0.85)',   bg2: 'rgba(40,0,20,0.85)',  glow: 'rgba(255,51,0,0.7)'   },
+        unlocked: { c1: '#00ff88', c2: '#00ffcc', bg1: 'rgba(0,40,20,0.85)',  bg2: 'rgba(0,30,25,0.85)',  glow: 'rgba(0,255,136,0.7)'  },
+        active:   { c1: '#00f0ff', c2: '#aa00ff', bg1: 'rgba(0,20,50,0.85)',  bg2: 'rgba(30,0,60,0.85)',  glow: 'rgba(0,240,255,0.7)'  },
+        result:   { c1: '#ffdd00', c2: '#ff6600', bg1: 'rgba(50,30,0,0.85)',  bg2: 'rgba(40,15,0,0.85)',  glow: 'rgba(255,221,0,0.7)'  },
+      };
+
+      const STATE_TRANSITIONS = {
+        locked: 'unlocked',
+        unlocked: 'active',
+        active: 'result',
+        result: 'locked',
+      };
+
+      let phoneState = 'locked';
+
+      function applyPhoneState(state) {
+        const s = STATE_STYLES[state];
+        if (!s) return;
+        pingBtn.style.setProperty('--c1', s.c1);
+        pingBtn.style.setProperty('--c2', s.c2);
+        pingBtn.style.setProperty('--bg1', s.bg1);
+        pingBtn.style.setProperty('--bg2', s.bg2);
+        btnLabel.textContent = STATE_LABELS[state];
+        btnLabel.style.textShadow = `0 0 12px ${s.glow}, 0 0 4px rgba(255,255,255,0.5)`;
+        // Restart animation to snap new colors immediately
+        pingBtn.style.animation = 'none';
+        void pingBtn.offsetWidth;
+        pingBtn.style.animation = '';
+      }
+
       socket.on('server:joined', () => {
         connectScreen.style.display = 'none';
         errorScreen.style.display = 'none';
         gameScreen.style.display = 'flex';
         cornerBr.style.display = 'flex';
         roomLabel.textContent = 'ROOM \u00B7 ' + roomId;
+        phoneState = 'locked';
+        applyPhoneState('locked');
       });
 
       socket.on('server:error', ({ message }) => {
@@ -298,7 +338,8 @@
           btnLabel.style.textShadow = '3px 0 rgba(255,0,204,0.9), -3px 0 rgba(0,240,255,0.9)';
           btnLabel.style.color = '#ffffff';
           ghostTimeout = setTimeout(() => {
-            btnLabel.style.textShadow = '0 0 8px rgba(255,255,255,0.4)';
+            const s = STATE_STYLES[phoneState];
+            btnLabel.style.textShadow = s ? `0 0 12px ${s.glow}, 0 0 4px rgba(255,255,255,0.5)` : '0 0 8px rgba(255,255,255,0.4)';
             ghostTimeout = null;
           }, 300);
         }, 60);
@@ -315,8 +356,12 @@
         const latencyMs = Date.now() - pingTimestamp;
         socket.emit('phone:latency', { roomId, latencyMs });
 
+        // Avanzar estado local y actualizar UI
+        phoneState = STATE_TRANSITIONS[phoneState] || 'locked';
+        applyPhoneState(phoneState);
+
         // Feedback háptico
-        if (navigator.vibrate) navigator.vibrate([40, 30, 40]); // Doble vibración corta para el retorno
+        if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
 
         // Re-enable button
         pingBtn.disabled = false;
