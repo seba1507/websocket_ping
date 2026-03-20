@@ -312,11 +312,10 @@
           }
         }
 
-        // DECAIMIENTO Y FÍSICA
-        if (anomalyPulse > 0) {
-          anomalyPulse -= 0.015;
-        }
-        const currentPulse = Math.max(0, anomalyPulse);
+        // Pulso sincronizado con la onda — mismo waveStartTime
+        const currentPulse = (waveActive || waveFading)
+          ? Math.max(0, 1.0 - (now - waveStartTime) / 800)
+          : 0;
         sphereMaterial.uniforms.uPulse.value = currentPulse;
 
         // Bloom fijo — la onda es el protagonista del impacto
@@ -413,8 +412,7 @@
       waveActive = true; waveFading = false;
 
       // 2. Detonamos la reacción épica
-      anomalyPulse = 1.0;
-      cameraShake = 0.12; // Inyectamos violencia a la cámara
+      cameraShake = 0.12;
 
       playBeep();
     });
